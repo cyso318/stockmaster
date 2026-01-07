@@ -31,12 +31,20 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# Proxy-Fix für korrekte Session-Cookies hinter Reverse-Proxy
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
 # Sicherheitskonfiguration
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(32))
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=int(os.getenv('SESSION_TIMEOUT_MINUTES', '30')))  # 30 Min Session-Timeout
 app.config['SESSION_COOKIE_HTTPONLY'] = os.getenv('SESSION_COOKIE_HTTPONLY', 'True') == 'True'
-app.config['SESSION_COOKIE_SAMESITE'] = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
+
+# SESSION_COOKIE_SAMESITE behandeln (None als String kommt aus .env)
+samesite_value = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
+app.config['SESSION_COOKIE_SAMESITE'] = None if samesite_value == 'None' else samesite_value
+
 app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'  # Für HTTPS
+app.config['SESSION_COOKIE_NAME'] = 'session'  # Einfacher Name
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max file upload
 
 # Rate Limiting
@@ -2752,6 +2760,39 @@ def print_custom_labels():
     return render_template('print_custom_labels.html',
                           items=items_with_codes,
                           template=dict(template))
+
+@app.route('/debug-session')
+def debug_session_page():
+    """Debug-Seite für Session-Probleme"""
+    return render_template('debug_session.html',
+                          secret_key_set=app.config.get('SECRET_KEY') is not None,
+                          config=app.config,
+                          session_data=dict(session),
+                          logged_in='logged_in' in session,
+                          cookies=dict(request.cookies))
+
+@app.route('/debug-login', methods=['POST'])
+def debug_login():
+    """Test-Login für Debugging"""
+    username = request.form.get('username')
+    password = request.form.get('password')
+
+    user = verify_user(username, password)
+
+    if user:
+        session.clear()
+        session['logged_in'] = True
+        session['user_id'] = user['id']
+        session['username'] = username
+        session['organization_id'] = user['organization_id']
+        session['organization_name'] = user['organization_name']
+        session['is_admin'] = user['is_admin']
+        session['is_org_owner'] = user['is_org_owner']
+        session.modified = True
+
+        return redirect(url_for('debug_session_page'))
+    else:
+        return redirect(url_for('debug_session_page'))
 
 if __name__ == '__main__':
     init_db()

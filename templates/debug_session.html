@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Session Debug</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+        .box { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { color: #667eea; }
+        pre { background: #f0f0f0; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .success { color: green; }
+        .error { color: red; }
+        button { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #5568d3; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Session Debug Interface</h1>
+
+    <div class="box">
+        <h2>1. Server-Konfiguration</h2>
+        <pre>SECRET_KEY gesetzt: {{ secret_key_set }}
+SESSION_COOKIE_HTTPONLY: {{ config.SESSION_COOKIE_HTTPONLY }}
+SESSION_COOKIE_SAMESITE: {{ config.SESSION_COOKIE_SAMESITE }}
+SESSION_COOKIE_SECURE: {{ config.SESSION_COOKIE_SECURE }}
+SESSION_COOKIE_NAME: {{ config.SESSION_COOKIE_NAME }}</pre>
+    </div>
+
+    <div class="box">
+        <h2>2. Aktuelle Session</h2>
+        <pre>Session-Daten: {{ session_data }}
+logged_in: <span class="{{ 'success' if logged_in else 'error' }}">{{ logged_in }}</span></pre>
+    </div>
+
+    <div class="box">
+        <h2>3. Request-Informationen</h2>
+        <pre>Request URL: {{ request.url }}
+Request Host: {{ request.host }}
+Remote Address: {{ request.remote_addr }}
+User-Agent: {{ request.user_agent }}</pre>
+    </div>
+
+    <div class="box">
+        <h2>4. Cookies</h2>
+        <pre>{{ cookies }}</pre>
+    </div>
+
+    <div class="box">
+        <h2>5. Test-Login</h2>
+        <form method="POST" action="/debug-login">
+            <input type="text" name="username" placeholder="Username" value="admin" style="padding: 8px; margin: 5px;">
+            <input type="password" name="password" placeholder="Password" value="admin123" style="padding: 8px; margin: 5px;">
+            <button type="submit">Test Login</button>
+        </form>
+    </div>
+
+    <div class="box">
+        <h2>6. JavaScript Cookie Test</h2>
+        <button onclick="testCookies()">Test Cookies (JS)</button>
+        <pre id="cookieTest"></pre>
+    </div>
+
+    <script>
+        function testCookies() {
+            const result = {
+                'document.cookie': document.cookie,
+                'cookieEnabled': navigator.cookieEnabled,
+                'all cookies': document.cookie.split(';').map(c => c.trim())
+            };
+            document.getElementById('cookieTest').textContent = JSON.stringify(result, null, 2);
+        }
+    </script>
+
+    <p><a href="/">← Zurück zur Hauptseite</a></p>
+</body>
+</html>
