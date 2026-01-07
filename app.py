@@ -37,6 +37,9 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=int(os.getenv('SESS
 app.config['SESSION_COOKIE_HTTPONLY'] = os.getenv('SESSION_COOKIE_HTTPONLY', 'True') == 'True'
 app.config['SESSION_COOKIE_SAMESITE'] = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
 app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'  # Für HTTPS
+app.config['SESSION_COOKIE_NAME'] = 'stockmaster_session'
+app.config['SESSION_COOKIE_PATH'] = '/'
+app.config['SESSION_REFRESH_EACH_REQUEST'] = True
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max file upload
 
 # Rate Limiting
@@ -796,6 +799,7 @@ def login():
             # Login erfolgreich - Reset failed attempts
             reset_failed_logins(ip_address)
 
+            session.clear()  # Clear any old session data
             session['logged_in'] = True
             session['user_id'] = user['id']
             session['username'] = username
@@ -814,6 +818,12 @@ def login():
             conn.execute('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', (user['id'],))
             conn.commit()
             conn.close()
+
+            session.modified = True  # Stelle sicher dass Session gespeichert wird
+
+            # Debug: Session-Daten loggen
+            print(f"[LOGIN DEBUG] Session gesetzt für User: {username}")
+            print(f"[LOGIN DEBUG] Session-Daten: logged_in={session.get('logged_in')}, user_id={session.get('user_id')}")
 
             return redirect(url_for('index'))
         else:
@@ -886,6 +896,10 @@ def offline():
 @app.route('/')
 def index():
     """Hauptseite - Landing Page oder Dashboard"""
+    # Debug: Session-Status loggen
+    print(f"[INDEX DEBUG] Session-Daten: {dict(session)}")
+    print(f"[INDEX DEBUG] logged_in in session: {'logged_in' in session}")
+
     if 'logged_in' in session:
         return render_template('index.html',
                              username=session.get('username'),
