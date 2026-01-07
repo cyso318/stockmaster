@@ -51,6 +51,8 @@ limiter = Limiter(
 csrf = CSRFProtect(app)
 app.config['WTF_CSRF_CHECK_DEFAULT'] = False  # Wir kontrollieren CSRF manuell
 app.config['WTF_CSRF_HEADERS'] = ['X-CSRFToken']
+app.config['WTF_CSRF_TIME_LIMIT'] = None  # Token läuft nicht ab
+app.config['WTF_CSRF_SSL_STRICT'] = False  # Erlaubt CSRF ohne SSL
 
 # Security Headers
 if os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True':
@@ -774,6 +776,10 @@ def register_page():
 @limiter.limit(os.getenv('LOGIN_RATE_LIMIT', '5 per minute'))
 def login():
     """Login-Seite"""
+    # Sicherstellen, dass eine Session existiert für CSRF-Token
+    if 'csrf_initialized' not in session:
+        session['csrf_initialized'] = True
+
     if request.method == 'POST':
         csrf.protect()
         username = request.form.get('username')
