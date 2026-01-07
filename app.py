@@ -43,9 +43,8 @@ app.config['SESSION_COOKIE_SAMESITE'] = None  # Wichtig für externe IPs
 app.config['SESSION_COOKIE_SECURE'] = False  # HTTP erlauben
 app.config['SESSION_COOKIE_NAME'] = 'stockmaster_session'
 app.config['SESSION_COOKIE_PATH'] = '/'
-app.config['SESSION_COOKIE_DOMAIN'] = None  # Automatisch setzen
+# SESSION_COOKIE_DOMAIN wird NICHT gesetzt - wichtig für IP-basierte Zugriffe
 app.config['SESSION_REFRESH_EACH_REQUEST'] = True
-app.config['SESSION_TYPE'] = 'filesystem'  # Alternative: 'filesystem' statt default
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max file upload
 
 # Rate Limiting
@@ -826,11 +825,6 @@ def login():
             conn.close()
 
             session.modified = True  # Stelle sicher dass Session gespeichert wird
-
-            # Debug: Session-Daten loggen
-            print(f"[LOGIN DEBUG] Session gesetzt für User: {username}")
-            print(f"[LOGIN DEBUG] Session-Daten: logged_in={session.get('logged_in')}, user_id={session.get('user_id')}")
-
             return redirect(url_for('index'))
         else:
             # Login fehlgeschlagen - Record attempt
@@ -902,10 +896,6 @@ def offline():
 @app.route('/')
 def index():
     """Hauptseite - Landing Page oder Dashboard"""
-    # Debug: Session-Status loggen
-    print(f"[INDEX DEBUG] Session-Daten: {dict(session)}")
-    print(f"[INDEX DEBUG] logged_in in session: {'logged_in' in session}")
-
     if 'logged_in' in session:
         return render_template('index.html',
                              username=session.get('username'),
