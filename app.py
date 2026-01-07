@@ -784,7 +784,6 @@ def register_page():
 def login():
     """Login-Seite"""
     if request.method == 'POST':
-        csrf.protect()
         username = request.form.get('username')
         password = request.form.get('password')
         remember = request.form.get('remember')
