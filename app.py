@@ -917,7 +917,6 @@ def item_detail(id):
     return render_template('item_detail.html', item=dict(item), movements=[dict(m) for m in movements])
 
 @app.route('/api/register', methods=['POST'])
-@csrf_protect_api()
 @limiter.limit("10 per hour")
 def register_organization():
     """Registriert eine neue Organisation ODER einen Benutzer zu bestehender Organisation"""
