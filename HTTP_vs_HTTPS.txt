@@ -1,0 +1,99 @@
+========================================
+HTTP vs HTTPS - Wann was verwenden?
+========================================
+
+AKTUELL: HTTPS ist DEAKTIVIERT
+Server läuft auf: http://localhost:5000
+
+
+WICHTIG ZU WISSEN:
+------------------
+
+Die Kamera-API funktioniert nur in "sicheren Kontexten":
+✓ http://localhost:5000 (nur auf dem PC)
+✓ https://beliebige-ip:5000 (auch vom Handy)
+✗ http://192.168.x.x:5000 (Kamera blockiert!)
+
+
+ZWEI MODI:
+----------
+
+1) HTTP-MODUS (aktuell aktiv)
+   + Einfach, keine Zertifikat-Warnung
+   + Funktioniert sofort
+   - Kamera NUR auf localhost (diesem PC)
+   - Kamera funktioniert NICHT vom Handy
+
+2) HTTPS-MODUS
+   + Kamera funktioniert von überall
+   + Kamera funktioniert auf dem Handy
+   - Browser zeigt Sicherheitswarnung
+   - Warnung muss akzeptiert werden
+
+
+ZWISCHEN DEN MODI WECHSELN:
+---------------------------
+
+HTTP aktivieren (aktuell):
+  Doppelklick: https_deaktivieren.bat
+  Dann Server neu starten
+
+HTTPS aktivieren:
+  Doppelklick: https_aktivieren.bat
+  Dann Server neu starten
+
+
+EMPFEHLUNG:
+-----------
+
+Arbeiten Sie NUR am PC?
+→ HTTP verwenden (keine Warnung, einfacher)
+→ Kamera-Button nur auf http://localhost:5000 nutzen
+
+Arbeiten Sie auch mit dem Handy?
+→ HTTPS verwenden (Kamera funktioniert überall)
+→ Warnung einmal akzeptieren, dann läuft alles
+
+
+SERVER STARTEN:
+---------------
+python app.py
+
+Der Server zeigt an, welcher Modus aktiv ist:
+
+HTTP-Modus:
+  "! HTTPS nicht aktiviert"
+  "Zugriff ueber: http://localhost:5000"
+
+HTTPS-Modus:
+  "OK HTTPS aktiviert"
+  "Zugriff ueber: https://localhost:5000"
+  "              https://192.168.x.x:5000"
+
+
+HTTPS-WARNUNG AKZEPTIEREN:
+--------------------------
+
+Chrome/Edge:
+1. "Ihre Verbindung ist nicht privat"
+2. Klick auf "Erweitert"
+3. Klick auf "Weiter zu localhost (unsicher)"
+
+Handy Chrome:
+1. "Ihre Verbindung ist nicht privat"
+2. Tippen: "Erweitert"
+3. Tippen: "Weiter zu ... (unsicher)"
+4. Falls keine Option: Einfach "thisisunsafe" eintippen
+
+
+ZUSAMMENFASSUNG:
+----------------
+
+Für PC-Nutzung:
+→ HTTP verwenden (https_deaktivieren.bat)
+→ http://localhost:5000
+
+Für Handy-Nutzung:
+→ HTTPS verwenden (https_aktivieren.bat)
+→ https://192.168.x.x:5000
+→ Warnung akzeptieren

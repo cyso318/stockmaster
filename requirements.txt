@@ -1,0 +1,16 @@
+Flask==3.0.0
+bcrypt==4.1.2
+Flask-Limiter==3.5.0
+Flask-Talisman==1.1.0
+Flask-WTF==1.2.1
+python-dotenv==1.0.0
+google-auth==2.25.2
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+google-api-python-client==2.110.0
+qrcode[pil]==7.4.2
+Pillow>=10.0.0
+openpyxl==3.1.2
+reportlab==4.0.7
+schedule==1.2.0
+python-barcode==0.15.1

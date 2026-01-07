@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.pyc
+
+# Flask
+instance/
+.webassets-cache
+
+# Database
+*.db
+*.db-journal
+inventory.db
+
+# Environment & Config
+.env
+.env.*
+!.env.example
+credentials.json
+token.pickle
+
+# SSL Certificates
+*.pem
+*.key
+cert.pem
+key.pem
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+nul
+
+# Logs
+*.log
+server.log
+
+# Uploads
+static/uploads/
+
+# Backups
+backups/
+*.backup
+
+# Test files
+test_*.py
+debug_*.py
+*_test.py

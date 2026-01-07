@@ -1,0 +1,111 @@
+========================================
+PYTHONANYWHERE - QUICK START
+========================================
+
+GESAMTZEIT: ~30 Minuten
+KOSTEN: KOSTENLOS
+
+
+SCHRITT 1: REGISTRIEREN
+-----------------------
+https://www.pythonanywhere.com
+→ "Create a Beginner account"
+→ Username, Email, Passwort
+→ Email bestätigen
+
+
+SCHRITT 2: CODE HOCHLADEN
+--------------------------
+Dashboard → Files → Neuer Ordner: /home/IhrUsername/stockmaster
+
+Dateien hochladen:
+  ✓ app.py
+  ✓ requirements.txt
+  ✓ auto_backup.py
+  ✓ notification_service.py
+  ✓ email_service.py
+
+Ordner erstellen & hochladen:
+  ✓ static/ (alle Dateien + icons/)
+  ✓ templates/ (alle .html Dateien)
+
+
+SCHRITT 3: PACKAGES INSTALLIEREN
+---------------------------------
+Dashboard → Consoles → Bash
+
+cd stockmaster
+python3.10 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+
+SCHRITT 4: DATENBANK
+---------------------
+python app.py
+[Warten bis "Database initialized"]
+Ctrl + C
+
+
+SCHRITT 5: WEB APP
+------------------
+Dashboard → Web → Add new web app
+→ Flask
+→ Python 3.10
+→ /home/IhrUsername/stockmaster/app.py
+
+Virtualenv:
+  /home/IhrUsername/stockmaster/venv
+
+WSGI Config (alles ersetzen):
+  import sys, os
+  path = '/home/IhrUsername/stockmaster'
+  sys.path.insert(0, path)
+  os.chdir(path)
+  from app import app as application
+
+Static Files:
+  URL: /static/
+  Path: /home/IhrUsername/stockmaster/static
+
+
+SCHRITT 6: STARTEN
+-------------------
+Web → Reload Button (grün)
+→ Fertig!
+
+URL: https://IhrUsername.pythonanywhere.com
+
+
+LOGIN
+-----
+Username: admin
+Password: admin123
+
+
+FERTIG! 🎉
+----------
+Ihre App läuft jetzt online!
+
+
+BEI FEHLERN
+-----------
+Web → Log files → Error log
+→ Letzten Fehler lesen
+
+Häufig: Package fehlt
+→ cd stockmaster
+→ source venv/bin/activate
+→ pip install [fehlender-package-name]
+→ Web → Reload
+
+
+WICHTIG NACH DEM START
+----------------------
+1. Passwort ändern!
+2. Testdaten anlegen
+3. Alle Funktionen testen
+4. Barcode-Scanner testen (HTTPS!)
+
+
+VIEL ERFOLG! 🚀

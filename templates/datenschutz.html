@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datenschutzerklärung - StockMaster</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+        h1 { font-size: 32px; color: #1f2937; margin-bottom: 10px; }
+        .subtitle { color: #6b7280; margin-bottom: 30px; font-size: 14px; }
+        h2 {
+            font-size: 20px;
+            color: #374151;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        h3 { font-size: 16px; color: #374151; margin-top: 20px; margin-bottom: 10px; }
+        p, li { color: #4b5563; line-height: 1.6; margin-bottom: 12px; }
+        ul { margin-left: 20px; margin-bottom: 16px; }
+        .contact-info {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .contact-info p { margin-bottom: 4px; }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .back-link:hover { transform: translateY(-2px); }
+        strong { color: #1f2937; }
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box p { color: #1e40af; margin: 0; }
+        @media (max-width: 768px) {
+            .container { padding: 24px; }
+            h1 { font-size: 24px; }
+            h2 { font-size: 18px; }
+            h3 { font-size: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Datenschutzerklärung</h1>
+        <p class="subtitle">Stand: Januar 2025</p>
+
+        <h2>1. Verantwortlicher</h2>
+        <div class="contact-info">
+            <p><strong>Robin Weschenfelder</strong></p>
+            <p>Straße der Einheit 9</p>
+            <p>07318 Saalfeld</p>
+            <p>Deutschland</p>
+            <p><strong>E-Mail:</strong> r.weschenfelder@proton.me</p>
+        </div>
+
+        <h2>2. Allgemeine Hinweise</h2>
+        <p>Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie StockMaster nutzen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.</p>
+
+        <div class="info-box">
+            <p><strong>Wichtig:</strong> StockMaster ist eine selbst gehostete Lagerverwaltungssoftware. Wenn Sie StockMaster auf Ihrem eigenen Server betreiben, sind Sie selbst für die Einhaltung der Datenschutzbestimmungen verantwortlich.</p>
+        </div>
+
+        <h2>3. Datenerfassung</h2>
+
+        <h3>3.1 Welche Daten werden erfasst?</h3>
+        <p>Bei der Nutzung von StockMaster werden folgende Daten erfasst und verarbeitet:</p>
+
+        <p><strong>Benutzerdaten:</strong></p>
+        <ul>
+            <li>Benutzername</li>
+            <li>E-Mail-Adresse</li>
+            <li>Passwort (verschlüsselt mit bcrypt)</li>
+            <li>Benutzerrolle (Admin, Standard-Benutzer)</li>
+            <li>Organisationszugehörigkeit</li>
+            <li>Zeitstempel der Kontoerstellung</li>
+        </ul>
+
+        <p><strong>Lagerverwaltungsdaten:</strong></p>
+        <ul>
+            <li>Artikelinformationen (Name, SKU, Beschreibung, Barcode)</li>
+            <li>Kategorien und Standorte</li>
+            <li>Lagerbestand und Bewegungen (Ein-/Ausbuchungen)</li>
+            <li>Preise und Lieferanteninformationen</li>
+            <li>Wartungsinformationen und Notizen</li>
+            <li>Produktbilder (Upload-Dateien)</li>
+        </ul>
+
+        <p><strong>Technische Daten:</strong></p>
+        <ul>
+            <li>Session-Daten (temporäre Anmeldeinformationen)</li>
+            <li>CSRF-Tokens (Sicherheitstoken)</li>
+            <li>LocalStorage-Daten (Theme-Einstellungen)</li>
+            <li>Browser-Informationen und IP-Adresse (Server-Logs)</li>
+        </ul>
+
+        <h3>3.2 Wie werden die Daten erfasst?</h3>
+        <p>Die Daten werden erfasst, wenn Sie:</p>
+        <ul>
+            <li>Ein Benutzerkonto erstellen oder bearbeiten</li>
+            <li>Artikel, Kategorien oder Standorte anlegen oder ändern</li>
+            <li>Lagerbewegungen durchführen</li>
+            <li>Bilder hochladen</li>
+            <li>Die Anwendung nutzen (automatische Erfassung technischer Daten)</li>
+        </ul>
+
+        <h3>3.3 Wofür nutzen wir Ihre Daten?</h3>
+        <p>Die erhobenen Daten werden verwendet für:</p>
+        <ul>
+            <li>Bereitstellung der Lagerverwaltungsfunktionen</li>
+            <li>Benutzerverwaltung und Zugangskontrolle</li>
+            <li>Sicherstellung der IT-Sicherheit</li>
+            <li>Fehleranalyse und Systemoptimierung</li>
+            <li>Erfüllung gesetzlicher Aufbewahrungspflichten</li>
+        </ul>
+
+        <h2>4. Rechtsgrundlage der Verarbeitung</h2>
+        <p>Die Verarbeitung Ihrer personenbezogenen Daten erfolgt auf folgenden Rechtsgrundlagen:</p>
+        <ul>
+            <li><strong>Art. 6 Abs. 1 lit. b DSGVO</strong> (Vertragserfüllung) - für die Bereitstellung der Lagerverwaltungsfunktionen</li>
+            <li><strong>Art. 6 Abs. 1 lit. f DSGVO</strong> (berechtigtes Interesse) - für die IT-Sicherheit und den ordnungsgemäßen Betrieb</li>
+            <li><strong>Art. 6 Abs. 1 lit. a DSGVO</strong> (Einwilligung) - für optionale Funktionen wie Google Drive Synchronisation</li>
+        </ul>
+
+        <h2>5. Datenspeicherung und Sicherheit</h2>
+
+        <h3>5.1 Wo werden die Daten gespeichert?</h3>
+        <p>Alle Daten werden lokal in einer SQLite-Datenbank auf Ihrem Server gespeichert. Es erfolgt keine automatische Übertragung an externe Server, es sei denn, Sie aktivieren explizit optionale Cloud-Funktionen.</p>
+
+        <h3>5.2 Sicherheitsmaßnahmen</h3>
+        <p>Wir setzen folgende Sicherheitsmaßnahmen ein:</p>
+        <ul>
+            <li><strong>Passwort-Verschlüsselung:</strong> Alle Passwörter werden mit bcrypt gehasht</li>
+            <li><strong>CSRF-Schutz:</strong> Schutz vor Cross-Site-Request-Forgery-Angriffen</li>
+            <li><strong>Rate Limiting:</strong> Schutz vor Brute-Force-Angriffen</li>
+            <li><strong>Session-Management:</strong> Sichere Session-Verwaltung mit automatischer Token-Erneuerung</li>
+            <li><strong>HTTPS-Unterstützung:</strong> Verschlüsselte Datenübertragung (optional)</li>
+            <li><strong>Automatische Backups:</strong> Regelmäßige Datensicherungen</li>
+        </ul>
+
+        <h3>5.3 Speicherdauer</h3>
+        <ul>
+            <li><strong>Benutzerkontodaten:</strong> Bis zur Löschung des Kontos durch Admin</li>
+            <li><strong>Lagerverwaltungsdaten:</strong> Solange das Konto aktiv ist</li>
+            <li><strong>Server-Logs:</strong> Maximal 90 Tage</li>
+            <li><strong>Session-Daten:</strong> Bis zum Logout oder Ablauf der Session</li>
+        </ul>
+
+        <h2>6. Cookies und LocalStorage</h2>
+        <p>StockMaster verwendet folgende Mechanismen:</p>
+
+        <p><strong>Session-Cookies:</strong></p>
+        <ul>
+            <li>Notwendig für die Login-Funktionalität</li>
+            <li>Werden nach Logout oder Session-Ablauf gelöscht</li>
+            <li>Keine Tracking- oder Marketing-Cookies</li>
+        </ul>
+
+        <p><strong>LocalStorage:</strong></p>
+        <ul>
+            <li>Speichert Theme-Einstellungen (Hell-/Dunkelmodus)</li>
+            <li>Kann jederzeit in den Browser-Einstellungen gelöscht werden</li>
+        </ul>
+
+        <h2>7. Externe Dienste (optional)</h2>
+
+        <h3>7.1 Google Drive Synchronisation</h3>
+        <p>Falls Sie die optionale Google Drive Synchronisation aktivieren:</p>
+        <ul>
+            <li>Werden Backups Ihrer Datenbank in Ihrem persönlichen Google Drive gespeichert</li>
+            <li>Die Synchronisation erfolgt über die Google Drive API</li>
+            <li>Es gelten die Datenschutzbestimmungen von Google</li>
+            <li><strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. a DSGVO (Einwilligung)</li>
+            <li><strong>Widerruf:</strong> Jederzeit in den Einstellungen möglich</li>
+        </ul>
+
+        <h3>7.2 Chart.js (CDN)</h3>
+        <p>Für die Darstellung von Statistiken wird Chart.js von einem CDN geladen:</p>
+        <ul>
+            <li><strong>Anbieter:</strong> jsDelivr (CloudFlare)</li>
+            <li><strong>Datenschutzerklärung:</strong> https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net</li>
+        </ul>
+
+        <h2>8. Datenweitergabe</h2>
+        <p>Ihre personenbezogenen Daten werden grundsätzlich nicht an Dritte weitergegeben. Eine Weitergabe erfolgt nur, wenn:</p>
+        <ul>
+            <li>Sie ausdrücklich eingewilligt haben (Art. 6 Abs. 1 lit. a DSGVO)</li>
+            <li>Dies zur Erfüllung gesetzlicher Verpflichtungen erforderlich ist (Art. 6 Abs. 1 lit. c DSGVO)</li>
+            <li>Die Weitergabe zur Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen erforderlich ist</li>
+        </ul>
+
+        <h2>9. Ihre Rechte als betroffene Person</h2>
+        <p>Sie haben gemäß DSGVO folgende Rechte:</p>
+
+        <ul>
+            <li><strong>Recht auf Auskunft (Art. 15 DSGVO):</strong> Sie können Auskunft über Ihre gespeicherten Daten verlangen</li>
+            <li><strong>Recht auf Berichtigung (Art. 16 DSGVO):</strong> Sie können die Korrektur unrichtiger Daten verlangen</li>
+            <li><strong>Recht auf Löschung (Art. 17 DSGVO):</strong> Sie können die Löschung Ihrer Daten verlangen</li>
+            <li><strong>Recht auf Einschränkung (Art. 18 DSGVO):</strong> Sie können die Einschränkung der Verarbeitung verlangen</li>
+            <li><strong>Recht auf Datenübertragbarkeit (Art. 20 DSGVO):</strong> Sie können Ihre Daten in einem strukturierten Format erhalten</li>
+            <li><strong>Widerspruchsrecht (Art. 21 DSGVO):</strong> Sie können der Verarbeitung widersprechen</li>
+            <li><strong>Beschwerderecht (Art. 77 DSGVO):</strong> Sie können sich bei einer Aufsichtsbehörde beschweren</li>
+        </ul>
+
+        <h3>Ausübung Ihrer Rechte</h3>
+        <p>Zur Ausübung Ihrer Rechte wenden Sie sich bitte an:</p>
+        <div class="contact-info">
+            <p><strong>E-Mail:</strong> r.weschenfelder@proton.me</p>
+        </div>
+
+        <h2>10. Zuständige Aufsichtsbehörde</h2>
+        <p>Für Beschwerden nach Art. 77 DSGVO ist folgende Behörde zuständig:</p>
+        <div class="contact-info">
+            <p><strong>Thüringer Landesbeauftragter für den Datenschutz und die Informationsfreiheit</strong></p>
+            <p>Häßlerstraße 8</p>
+            <p>99096 Erfurt</p>
+            <p>Telefon: +49 361 57 3112900</p>
+            <p>E-Mail: poststelle@datenschutz.thueringen.de</p>
+            <p>Website: https://www.tlfdi.de</p>
+        </div>
+
+        <h2>11. Änderungen dieser Datenschutzerklärung</h2>
+        <p>Wir behalten uns vor, diese Datenschutzerklärung anzupassen, um sie an geänderte Rechtslagen oder bei Änderungen der Anwendung sowie der Datenverarbeitung anzupassen. Die jeweils aktuelle Version ist auf dieser Seite abrufbar.</p>
+
+        <h2>12. Kontakt</h2>
+        <p>Bei Fragen zum Datenschutz oder zur Ausübung Ihrer Rechte können Sie sich jederzeit an uns wenden:</p>
+        <div class="contact-info">
+            <p><strong>Robin Weschenfelder</strong></p>
+            <p>Straße der Einheit 9</p>
+            <p>07318 Saalfeld</p>
+            <p>Deutschland</p>
+            <p><strong>E-Mail:</strong> r.weschenfelder@proton.me</p>
+        </div>
+
+        <p style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 13px; color: #6b7280;">
+            <strong>Letzte Aktualisierung:</strong> Januar 2025
+        </p>
+
+        <a href="/" class="back-link">← Zurück zur Anwendung</a>
+    </div>
+</body>
+</html>

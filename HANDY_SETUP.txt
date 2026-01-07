@@ -1,0 +1,131 @@
+========================================
+KAMERA AUF DEM HANDY EINRICHTEN
+========================================
+
+WICHTIG: Das Zertifikat wurde neu erstellt und unterstützt jetzt auch die IP-Adressen:
+✓ 192.168.178.99
+✓ 10.201.64.168
+
+SCHRITT 1: Server neu starten
+------------------------------
+1. Stoppen Sie den Python-Server (falls er läuft)
+2. Starten Sie ihn neu:
+   python app.py
+
+3. Sie sollten sehen:
+   "✓ HTTPS aktiviert - Zugriff über: https://localhost:5000"
+
+
+SCHRITT 2: Vom Handy zugreifen
+-------------------------------
+1. Stellen Sie sicher, dass Handy und PC im gleichen WLAN sind
+
+2. Öffnen Sie Chrome auf dem Handy
+
+3. Geben Sie ein:
+   https://192.168.178.99:5000
+
+   (WICHTIG: Verwenden Sie HTTPS, nicht HTTP!)
+
+
+SCHRITT 3: Sicherheitswarnung akzeptieren
+------------------------------------------
+Das Handy zeigt eine Sicherheitswarnung, weil das Zertifikat selbst-signiert ist.
+
+CHROME (Android):
+-----------------
+1. Sie sehen: "Ihre Verbindung ist nicht privat"
+   oder "NET::ERR_CERT_AUTHORITY_INVALID"
+
+2. Tippen Sie auf "Erweitert"
+
+3. Tippen Sie auf "Weiter zu 192.168.178.99 (unsicher)"
+
+4. Die Seite lädt jetzt
+
+
+CHROME (iPhone/iOS):
+-------------------
+1. Sie sehen: "Diese Verbindung ist nicht privat"
+
+2. Tippen Sie auf "Details anzeigen"
+
+3. Tippen Sie auf "Diese Website besuchen"
+
+4. Bestätigen Sie mit "Besuchen"
+
+
+SCHRITT 4: Kamera-Berechtigung erteilen
+----------------------------------------
+1. Öffnen Sie die App (StockMaster)
+
+2. Klicken Sie auf den "Kamera"-Button (bei Barcode-Scanner)
+
+3. Chrome fragt: "192.168.178.99 möchte auf Ihre Kamera zugreifen"
+
+4. Tippen Sie auf "Zulassen"
+
+5. Die Kamera sollte jetzt starten!
+
+
+FEHLERSUCHE:
+------------
+
+Problem: "Ihre Verbindung ist nicht sicher" ohne Option zum Fortfahren
+Lösung:
+- Geben Sie "thisisunsafe" ein (ohne Anführungszeichen)
+- Chrome verstecktes Feature für selbst-signierte Zertifikate
+- Einfach auf der Warnseite tippen: thisisunsafe
+
+Problem: Kamera funktioniert nicht nach Akzeptieren
+Lösung:
+1. Öffnen Sie die Browser-Konsole:
+   - Chrome Android: chrome://inspect > Remote Devices
+   - oder über Chrome auf PC: Menu > Weitere Tools > Remote-Geräte
+
+2. Prüfen Sie die Fehlermeldungen
+
+3. Stellen Sie sicher dass Sie wirklich HTTPS verwenden:
+   - Adressleiste muss "https://" zeigen
+   - Auch wenn Schloss durchgestrichen ist
+
+Problem: "Seite nicht erreichbar"
+Lösung:
+- Prüfen Sie ob der Server läuft
+- Prüfen Sie die IP-Adresse:
+  ipconfig auf dem PC
+- Stellen Sie sicher, dass Firewall den Port 5000 erlaubt
+
+
+FIREWALL EINSTELLUNGEN (FALLS NÖTIG):
+-------------------------------------
+Wenn das Handy nicht auf den Server zugreifen kann:
+
+Windows Firewall:
+1. Windows-Suche: "Firewall"
+2. "Windows Defender Firewall mit erweiterter Sicherheit"
+3. "Eingehende Regeln" > "Neue Regel"
+4. Typ: Port
+5. TCP, Port: 5000
+6. Verbindung zulassen
+7. Name: "Flask StockMaster"
+
+
+ALTERNATIVE IP-ADRESSE:
+-----------------------
+Falls 192.168.178.99 nicht funktioniert, versuchen Sie:
+https://10.201.64.168:5000
+
+Das Zertifikat unterstützt beide IPs!
+
+
+NACH ERFOLGREICHER EINRICHTUNG:
+-------------------------------
+✓ Kamera öffnet sich
+✓ Sie sehen Live-Vorschau
+✓ Scan-Rahmen wird angezeigt
+✓ Sie können zwischen Front/Rück-Kamera wechseln
+✓ Manuelle Eingabe als Fallback
+
+Die Warnung beim Verbinden müssen Sie nur einmal akzeptieren.
+Chrome merkt sich die Entscheidung für diese Sitzung.
