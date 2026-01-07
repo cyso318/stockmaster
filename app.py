@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 import sqlite3
 import os
 import json
@@ -31,15 +32,20 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# Proxy-Fix für korrekte Session-Cookies hinter Reverse-Proxy
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
 # Sicherheitskonfiguration
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(32))
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=int(os.getenv('SESSION_TIMEOUT_MINUTES', '30')))  # 30 Min Session-Timeout
-app.config['SESSION_COOKIE_HTTPONLY'] = os.getenv('SESSION_COOKIE_HTTPONLY', 'True') == 'True'
-app.config['SESSION_COOKIE_SAMESITE'] = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
-app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'  # Für HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = None  # Wichtig für externe IPs
+app.config['SESSION_COOKIE_SECURE'] = False  # HTTP erlauben
 app.config['SESSION_COOKIE_NAME'] = 'stockmaster_session'
 app.config['SESSION_COOKIE_PATH'] = '/'
+app.config['SESSION_COOKIE_DOMAIN'] = None  # Automatisch setzen
 app.config['SESSION_REFRESH_EACH_REQUEST'] = True
+app.config['SESSION_TYPE'] = 'filesystem'  # Alternative: 'filesystem' statt default
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max file upload
 
 # Rate Limiting
