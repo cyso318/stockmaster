@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
-from werkzeug.middleware.proxy_fix import ProxyFix
 import sqlite3
 import os
 import json
@@ -32,19 +31,12 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Proxy-Fix für korrekte Session-Cookies hinter Reverse-Proxy
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
-
 # Sicherheitskonfiguration
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(32))
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=int(os.getenv('SESSION_TIMEOUT_MINUTES', '30')))  # 30 Min Session-Timeout
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = None  # Wichtig für externe IPs
-app.config['SESSION_COOKIE_SECURE'] = False  # HTTP erlauben
-app.config['SESSION_COOKIE_NAME'] = 'stockmaster_session'
-app.config['SESSION_COOKIE_PATH'] = '/'
-# SESSION_COOKIE_DOMAIN wird NICHT gesetzt - wichtig für IP-basierte Zugriffe
-app.config['SESSION_REFRESH_EACH_REQUEST'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = os.getenv('SESSION_COOKIE_HTTPONLY', 'True') == 'True'
+app.config['SESSION_COOKIE_SAMESITE'] = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'  # Für HTTPS
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max file upload
 
 # Rate Limiting
@@ -59,8 +51,6 @@ limiter = Limiter(
 csrf = CSRFProtect(app)
 app.config['WTF_CSRF_CHECK_DEFAULT'] = False  # Wir kontrollieren CSRF manuell
 app.config['WTF_CSRF_HEADERS'] = ['X-CSRFToken']
-app.config['WTF_CSRF_TIME_LIMIT'] = None  # Token läuft nicht ab
-app.config['WTF_CSRF_SSL_STRICT'] = False  # Erlaubt CSRF ohne SSL
 
 # Security Headers
 if os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True':
@@ -785,6 +775,7 @@ def register_page():
 def login():
     """Login-Seite"""
     if request.method == 'POST':
+        csrf.protect()
         username = request.form.get('username')
         password = request.form.get('password')
         remember = request.form.get('remember')
@@ -804,7 +795,6 @@ def login():
             # Login erfolgreich - Reset failed attempts
             reset_failed_logins(ip_address)
 
-            session.clear()  # Clear any old session data
             session['logged_in'] = True
             session['user_id'] = user['id']
             session['username'] = username
@@ -824,7 +814,6 @@ def login():
             conn.commit()
             conn.close()
 
-            session.modified = True  # Stelle sicher dass Session gespeichert wird
             return redirect(url_for('index'))
         else:
             # Login fehlgeschlagen - Record attempt
@@ -928,6 +917,7 @@ def item_detail(id):
     return render_template('item_detail.html', item=dict(item), movements=[dict(m) for m in movements])
 
 @app.route('/api/register', methods=['POST'])
+@csrf_protect_api()
 @limiter.limit("10 per hour")
 def register_organization():
     """Registriert eine neue Organisation ODER einen Benutzer zu bestehender Organisation"""
