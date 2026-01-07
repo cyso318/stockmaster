@@ -776,12 +776,7 @@ def register_page():
 @limiter.limit(os.getenv('LOGIN_RATE_LIMIT', '5 per minute'))
 def login():
     """Login-Seite"""
-    # Sicherstellen, dass eine Session existiert für CSRF-Token
-    if 'csrf_initialized' not in session:
-        session['csrf_initialized'] = True
-
     if request.method == 'POST':
-        csrf.protect()
         username = request.form.get('username')
         password = request.form.get('password')
         remember = request.form.get('remember')
