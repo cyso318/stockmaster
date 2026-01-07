@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 import sqlite3
 import os
 import json
