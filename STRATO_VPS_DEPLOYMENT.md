@@ -62,7 +62,7 @@ su - stockmaster
 ### Option A: Mit Git (empfohlen)
 ```bash
 cd /home/stockmaster
-git clone https://github.com/IHR_USERNAME/stockmaster.git
+git clone https://github.com/cyso318/stockmaster.git
 cd stockmaster
 ```
 
