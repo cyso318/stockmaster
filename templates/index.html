@@ -2069,16 +2069,6 @@
                                 <div class="burger-menu-org">{{ session.get('organization_name', 'Organisation') }}</div>
                             </div>
                             <div class="burger-menu-items">
-                                <button onclick="printQRCodes(); closeBurgerMenu();" class="burger-menu-item">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="3" y="3" width="18" height="18" rx="2"/>
-                                        <path d="M7 7h10M7 12h10M7 17h6"/>
-                                    </svg>
-                                    <div class="burger-menu-item-content">
-                                        <div class="burger-menu-item-title">QR-Codes drucken</div>
-                                        <div class="burger-menu-item-desc">Alle QR-Codes generieren</div>
-                                    </div>
-                                </button>
                                 <button onclick="printBarcodes(); closeBurgerMenu();" class="burger-menu-item">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <rect x="2" y="6" width="20" height="12" rx="2"/>
@@ -2087,15 +2077,6 @@
                                     <div class="burger-menu-item-content">
                                         <div class="burger-menu-item-title">Barcodes drucken</div>
                                         <div class="burger-menu-item-desc">Alle Barcodes generieren</div>
-                                    </div>
-                                </button>
-                                <button onclick="window.location.href='/label-designer'" class="burger-menu-item">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                                    </svg>
-                                    <div class="burger-menu-item-content">
-                                        <div class="burger-menu-item-title">Label Designer</div>
-                                        <div class="burger-menu-item-desc">Eigene Etiketten gestalten</div>
                                     </div>
                                 </button>
                                 <button onclick="syncToCloud(); closeBurgerMenu();" class="burger-menu-item">
