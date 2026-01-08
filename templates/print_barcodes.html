@@ -289,7 +289,7 @@
             object-fit: contain;
         }
 
-        /* Brother QL (62mm endlos) */
+        /* Brother QL (62mm endlos) - VERTIKAL ROTIERT */
         .format-brother-62 .labels {
             display: flex;
             flex-direction: column;
@@ -298,35 +298,40 @@
 
         .format-brother-62 .label {
             width: 62mm;
-            min-height: 30mm;
+            min-height: 100mm;
             border: 1px solid #ddd;
-            padding: 3mm;
+            padding: 5mm;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             background: white;
             page-break-inside: avoid;
         }
 
         .format-brother-62 .label .name {
-            font-size: 9pt;
+            font-size: 10pt;
             font-weight: bold;
             text-align: center;
-            margin-bottom: 2mm;
+            margin-bottom: 5mm;
+            width: 100%;
+            word-wrap: break-word;
         }
 
         .format-brother-62 .label .barcode-img {
-            width: 56mm;
-            height: auto;
-            max-height: 18mm;
+            /* Barcode um 90 Grad rotieren für vertikalen Druck */
+            transform: rotate(90deg);
+            width: 80mm;
+            height: 56mm;
             object-fit: contain;
-            margin: 2mm 0;
+            margin: 10mm 0;
         }
 
         .format-brother-62 .label .details {
-            font-size: 7pt;
+            font-size: 8pt;
             color: #666;
             text-align: center;
+            width: 100%;
         }
 
         /* Standard A4 Vollseite */
