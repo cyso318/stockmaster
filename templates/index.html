@@ -684,6 +684,16 @@
             border-top-right-radius: 8px;
         }
 
+        /* Kompakte Ansicht - verstecke bestimmte Spalten */
+        body.view-compact table th:nth-child(4), /* Kategorie */
+        body.view-compact table td:nth-child(4),
+        body.view-compact table th:nth-child(6), /* Bestand */
+        body.view-compact table td:nth-child(6),
+        body.view-compact table th:nth-child(7), /* Preis */
+        body.view-compact table td:nth-child(7) {
+            display: none;
+        }
+
         td {
             padding: 16px 12px;
             border-bottom: 1px solid var(--gray-200);
@@ -1843,6 +1853,8 @@
             .modal-content form {
                 padding: 20px;
                 max-height: calc(95vh - 80px);
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             /* Responsive Tabellen */
@@ -2160,6 +2172,18 @@
                                     </div>
                                 </button>
                                 {% endif %}
+                                <button onclick="toggleViewMode(); closeBurgerMenu();" class="burger-menu-item">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="7" height="7"/>
+                                        <rect x="14" y="3" width="7" height="7"/>
+                                        <rect x="3" y="14" width="7" height="7"/>
+                                        <rect x="14" y="14" width="7" height="7"/>
+                                    </svg>
+                                    <div class="burger-menu-item-content">
+                                        <div class="burger-menu-item-title">Ansicht</div>
+                                        <div class="burger-menu-item-desc" id="view-mode-text">Standard</div>
+                                    </div>
+                                </button>
                                 <button onclick="window.location.href='/profile'" class="burger-menu-item">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -2810,6 +2834,35 @@
             const dropdown = document.getElementById('burger-menu-dropdown');
             dropdown.classList.remove('active');
         }
+
+        // ============= ANSICHTSMODUS (STANDARD / KOMPAKT) =============
+
+        function toggleViewMode() {
+            const currentMode = localStorage.getItem('viewMode') || 'standard';
+            const newMode = currentMode === 'standard' ? 'compact' : 'standard';
+
+            localStorage.setItem('viewMode', newMode);
+            applyViewMode(newMode);
+        }
+
+        function applyViewMode(mode) {
+            const body = document.body;
+            const text = document.getElementById('view-mode-text');
+
+            if (mode === 'compact') {
+                body.classList.add('view-compact');
+                if (text) text.textContent = 'Kompakt (Name, Bild, Standort)';
+            } else {
+                body.classList.remove('view-compact');
+                if (text) text.textContent = 'Standard (Alle Infos)';
+            }
+        }
+
+        // Ansichtsmodus beim Laden anwenden
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedMode = localStorage.getItem('viewMode') || 'standard';
+            applyViewMode(savedMode);
+        });
 
         // Schließe Burger-Menü beim Klick außerhalb
         document.addEventListener('click', function(event) {
