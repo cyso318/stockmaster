@@ -41,9 +41,18 @@ class GoogleDriveSync:
                         'Bitte laden Sie die OAuth 2.0 Credentials von der Google Cloud Console herunter.'
                     )
 
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    'credentials.json', SCOPES)
-                self.creds = flow.run_local_server(port=0)
+                # Versuche Browser-Authentifizierung (nur auf lokalem PC)
+                try:
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        'credentials.json', SCOPES)
+                    self.creds = flow.run_local_server(port=0)
+                except Exception as e:
+                    # Auf Server ohne Browser: Token muss manuell erstellt werden
+                    raise RuntimeError(
+                        'Google Drive Authentifizierung fehlgeschlagen. '
+                        'Bitte authentifizieren Sie auf einem lokalen PC mit Browser und laden Sie token.pickle hoch. '
+                        f'Fehler: {str(e)}'
+                    )
 
             # Speichere Credentials für nächstes Mal
             with open('token.pickle', 'wb') as token:
