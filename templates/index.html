@@ -2067,6 +2067,12 @@
                             <div class="burger-menu-header">
                                 <div class="burger-menu-user">{{ session.get('username', 'Benutzer') }}</div>
                                 <div class="burger-menu-org">{{ session.get('organization_name', 'Organisation') }}</div>
+                                <div class="burger-menu-org-id" style="font-size: 11px; color: #9ca3af; margin-top: 4px; font-family: monospace;">
+                                    Org-ID: <span id="org-id-display">-</span>
+                                    <button onclick="copyOrgId(event)" style="background: none; border: none; cursor: pointer; color: #6366f1; margin-left: 8px; padding: 0; font-size: 11px;" title="Kopieren">
+                                        📋
+                                    </button>
+                                </div>
                             </div>
                             <div class="burger-menu-items">
                                 <button onclick="printBarcodes(); closeBurgerMenu();" class="burger-menu-item">
@@ -2987,6 +2993,33 @@
             // Lade Wartungsbenachrichtigungen
             loadMaintenanceAlerts();
         };
+
+        // Organisations-ID in Burger-Menü laden
+        async function loadOrganizationId() {
+            try {
+                const response = await fetch('/api/organization-info');
+                const data = await response.json();
+                document.getElementById('org-id-display').textContent = data.id;
+            } catch (error) {
+                console.error('Fehler beim Laden der Organisations-ID:', error);
+            }
+        }
+
+        // Organisations-ID kopieren
+        function copyOrgId(event) {
+            event.stopPropagation();
+            const orgId = document.getElementById('org-id-display').textContent;
+            navigator.clipboard.writeText(orgId).then(() => {
+                showAlert('Organisations-ID kopiert: ' + orgId, 'success');
+            }).catch(err => {
+                showAlert('Fehler beim Kopieren', 'error');
+            });
+        }
+
+        // Lade Org-ID beim Start
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOrganizationId();
+        });
 
         // ============= IMAGE PREVIEW FUNCTIONALITY =============
 

@@ -1072,7 +1072,33 @@ def dashboard():
         'total_locations': total_locations,
         'low_stock_items': low_stock,
         'total_value': round(total_value, 2),
-        'sync_status': sync_status
+        'sync_status': sync_status,
+        'organization_id': organization_id
+    })
+
+@app.route('/api/organization-info')
+@login_required
+def organization_info():
+    """Organisationsinformationen abrufen"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+
+    org = conn.execute('''SELECT id, name, max_users, created_at
+                          FROM organizations
+                          WHERE id = ?''', (organization_id,)).fetchone()
+
+    user_count = conn.execute('''SELECT COUNT(*) as count
+                                 FROM users
+                                 WHERE organization_id = ?''', (organization_id,)).fetchone()['count']
+
+    conn.close()
+
+    return jsonify({
+        'id': org['id'],
+        'name': org['name'],
+        'max_users': org['max_users'],
+        'current_users': user_count,
+        'created_at': org['created_at']
     })
 
 # ============= USER MANAGEMENT =============
