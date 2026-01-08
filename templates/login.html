@@ -241,7 +241,6 @@
             {% endif %}
 
             <form method="POST" action="/login">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="form-group">
                     <label for="username">Benutzername</label>
                     <input type="text" id="username" name="username" required autofocus>
@@ -262,15 +261,8 @@
                 <button type="submit" class="btn-login">Anmelden</button>
             </form>
 
-            <div class="info-box">
-                <h3>Standard-Anmeldedaten</h3>
-                <p>
-                    <strong>Benutzername:</strong> <code>admin</code><br>
-                    <strong>Passwort:</strong> <code>admin123</code>
-                </p>
-                <p style="margin-top: 10px; color: var(--danger); font-weight: 500;">
-                    ⚠️ Bitte ändern Sie das Passwort nach dem ersten Login!
-                </p>
+            <div style="text-align: center; margin-top: 24px; font-size: 14px; color: var(--gray-600);">
+                <p>Noch kein Konto? <a href="/register" style="color: var(--primary); text-decoration: none; font-weight: 500;">Registrieren</a></p>
             </div>
         </div>
     </div>
