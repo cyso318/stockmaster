@@ -215,11 +215,17 @@
         <div id="user-tab" class="tab-content">
             <form id="user-form">
                 <div class="form-group">
-                    <label>Organisations-ID</label>
-                    <input type="text" id="user-org-id" name="org_id" required placeholder="z.B. 1">
+                    <label>Einladungscode</label>
+                    <input type="text" id="user-invitation-token" name="invitation_token" required placeholder="z.B. xY3k9mP2vL8" autocomplete="off">
                     <div style="font-size: 12px; color: #6b7280; margin-top: 6px;">
-                        💡 Die ID erhalten Sie vom Administrator Ihrer Organisation.<br>
-                        Sie finden diese im Burger-Menü (☰) oben rechts im Dashboard.
+                        🔐 Den Einladungscode erhalten Sie vom Administrator Ihrer Organisation.<br>
+                        Jeder Code kann nur einmal verwendet werden.
+                    </div>
+                </div>
+
+                <div id="org-name-display" style="display: none; padding: 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; margin-bottom: 16px;">
+                    <div style="font-size: 13px; color: #0c4a6e;">
+                        <strong>Organisation:</strong> <span id="org-name-text">-</span>
                     </div>
                 </div>
 
@@ -313,13 +319,50 @@
             }
         });
 
+        // Token-Validierung bei Eingabe
+        const tokenInput = document.getElementById('user-invitation-token');
+        let validationTimeout;
+
+        tokenInput?.addEventListener('input', function() {
+            clearTimeout(validationTimeout);
+            const token = this.value.trim();
+
+            if (token.length < 6) {
+                document.getElementById('org-name-display').style.display = 'none';
+                return;
+            }
+
+            validationTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch('/api/invitations/validate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ token })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.valid) {
+                        document.getElementById('org-name-text').textContent = result.organization_name;
+                        document.getElementById('org-name-display').style.display = 'block';
+                    } else {
+                        document.getElementById('org-name-display').style.display = 'none';
+                    }
+                } catch (error) {
+                    document.getElementById('org-name-display').style.display = 'none';
+                }
+            }, 500);
+        });
+
         // Form 2: Benutzer hinzufügen
         document.getElementById('user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const formData = {
                 type: 'user',
-                org_id: document.getElementById('user-org-id').value,
+                invitation_token: document.getElementById('user-invitation-token').value,
                 username: document.getElementById('user-username').value,
                 password: document.getElementById('user-password').value
             };

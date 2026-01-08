@@ -200,6 +200,21 @@ def init_db():
                   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
 
+    # Einladungstokens Tabelle
+    c.execute('''CREATE TABLE IF NOT EXISTS invitation_tokens
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  organization_id INTEGER NOT NULL,
+                  token TEXT NOT NULL UNIQUE,
+                  created_by INTEGER NOT NULL,
+                  is_used BOOLEAN DEFAULT 0,
+                  used_by INTEGER,
+                  expires_at TIMESTAMP,
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  used_at TIMESTAMP,
+                  FOREIGN KEY (organization_id) REFERENCES organizations (id),
+                  FOREIGN KEY (created_by) REFERENCES users (id),
+                  FOREIGN KEY (used_by) REFERENCES users (id))''')
+
     # Benutzer Tabelle (mit organization_id)
     c.execute('''CREATE TABLE IF NOT EXISTS users
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -988,30 +1003,50 @@ def register_organization():
                 'organization_slug': org_slug
             })
 
-        # FALL 2: Benutzer zu bestehender Organisation hinzufügen
+        # FALL 2: Benutzer zu bestehender Organisation hinzufügen (mit Einladungstoken)
         elif reg_type == 'user':
             # Validierung
-            required_fields = ['org_id', 'username', 'password']
+            required_fields = ['invitation_token', 'username', 'password']
             for field in required_fields:
                 if not data.get(field):
                     return jsonify({'success': False, 'message': f'Feld "{field}" ist erforderlich'}), 400
 
             conn = get_db_connection()
 
-            # Prüfe ob Organisation existiert
-            org = conn.execute('SELECT id, name, max_users FROM organizations WHERE id = ?', (data['org_id'],)).fetchone()
-            if not org:
+            # Validiere Einladungstoken
+            token = conn.execute('''SELECT t.*, o.name as org_name, o.max_users
+                                   FROM invitation_tokens t
+                                   JOIN organizations o ON t.organization_id = o.id
+                                   WHERE t.token = ?''', (data['invitation_token'],)).fetchone()
+
+            if not token:
                 conn.close()
-                return jsonify({'success': False, 'message': 'Organisation nicht gefunden'}), 404
+                return jsonify({'success': False, 'message': 'Ungültiger Einladungscode'}), 400
+
+            # Prüfe ob bereits verwendet
+            if token['is_used']:
+                conn.close()
+                return jsonify({'success': False, 'message': 'Dieser Einladungscode wurde bereits verwendet'}), 400
+
+            # Prüfe ob abgelaufen
+            if token['expires_at']:
+                expires_at = datetime.fromisoformat(token['expires_at'])
+                if datetime.now() > expires_at:
+                    conn.close()
+                    return jsonify({'success': False, 'message': 'Dieser Einladungscode ist abgelaufen'}), 400
+
+            organization_id = token['organization_id']
 
             # Prüfe Benutzerlimit
-            user_count = conn.execute('SELECT COUNT(*) as count FROM users WHERE organization_id = ?', (data['org_id'],)).fetchone()['count']
-            if user_count >= org['max_users']:
+            user_count = conn.execute('SELECT COUNT(*) as count FROM users WHERE organization_id = ?',
+                                     (organization_id,)).fetchone()['count']
+            if user_count >= token['max_users']:
                 conn.close()
                 return jsonify({'success': False, 'message': 'Maximale Benutzeranzahl erreicht'}), 400
 
-            # Prüfe ob Benutzername bereits vergeben ist
-            existing_user = conn.execute('SELECT id FROM users WHERE username = ?', (data['username'],)).fetchone()
+            # Prüfe ob Benutzername bereits in dieser Organisation vergeben ist
+            existing_user = conn.execute('SELECT id FROM users WHERE organization_id = ? AND username = ?',
+                                        (organization_id, data['username'])).fetchone()
             if existing_user:
                 conn.close()
                 return jsonify({'success': False, 'message': 'Benutzername bereits vergeben'}), 400
@@ -1019,10 +1054,17 @@ def register_organization():
             # Benutzer erstellen
             password_hash = hash_password(data['password'])
 
-            conn.execute('''
+            cursor = conn.execute('''
                 INSERT INTO users (organization_id, username, password_hash, email, first_name, last_name, is_admin, is_org_owner)
                 VALUES (?, ?, ?, ?, ?, ?, 0, 0)
-            ''', (data['org_id'], data['username'], password_hash, '', '', ''))
+            ''', (organization_id, data['username'], password_hash, '', '', ''))
+
+            user_id = cursor.lastrowid
+
+            # Token als verwendet markieren
+            conn.execute('''UPDATE invitation_tokens
+                           SET is_used = 1, used_by = ?, used_at = CURRENT_TIMESTAMP
+                           WHERE id = ?''', (user_id, token['id']))
 
             conn.commit()
             conn.close()
@@ -1101,6 +1143,119 @@ def organization_info():
         'created_at': org['created_at']
     })
 
+# ============= INVITATION TOKENS =============
+
+@app.route('/api/invitations', methods=['GET', 'POST'])
+@admin_required
+@csrf_protect_api()
+def invitations():
+    """Einladungstokens verwalten (nur Admin)"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+    user_id = session.get('user_id')
+
+    if request.method == 'POST':
+        # Neuen Einladungstoken erstellen
+        data = request.json
+        expires_hours = data.get('expires_hours', 24)  # Standard: 24h
+
+        # Token generieren (sicherer 16-stelliger Code)
+        token = secrets.token_urlsafe(12)
+
+        # Ablaufdatum berechnen
+        expires_at = datetime.now() + timedelta(hours=expires_hours) if expires_hours > 0 else None
+
+        conn.execute('''INSERT INTO invitation_tokens
+                        (organization_id, token, created_by, expires_at)
+                        VALUES (?, ?, ?, ?)''',
+                     (organization_id, token, user_id, expires_at))
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'token': token,
+            'expires_at': expires_at.isoformat() if expires_at else None
+        })
+
+    # GET - Alle Tokens anzeigen
+    tokens = conn.execute('''SELECT t.*, u.username as created_by_username
+                            FROM invitation_tokens t
+                            JOIN users u ON t.created_by = u.id
+                            WHERE t.organization_id = ?
+                            ORDER BY t.created_at DESC''',
+                         (organization_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(t) for t in tokens])
+
+@app.route('/api/invitations/<int:token_id>', methods=['DELETE'])
+@admin_required
+@csrf_protect_api()
+def delete_invitation(token_id):
+    """Einladungstoken löschen"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+
+    conn.execute('''DELETE FROM invitation_tokens
+                    WHERE id = ? AND organization_id = ?''',
+                (token_id, organization_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'success': True})
+
+@app.route('/api/invitations/validate', methods=['POST'])
+@limiter.limit("10 per hour")
+def validate_invitation():
+    """Einladungstoken validieren (öffentlich)"""
+    data = request.json
+    token = data.get('token')
+
+    if not token:
+        return jsonify({'valid': False, 'message': 'Kein Token angegeben'}), 400
+
+    conn = get_db_connection()
+
+    # Token suchen
+    inv = conn.execute('''SELECT t.*, o.name as org_name, o.max_users
+                         FROM invitation_tokens t
+                         JOIN organizations o ON t.organization_id = o.id
+                         WHERE t.token = ?''', (token,)).fetchone()
+
+    if not inv:
+        conn.close()
+        return jsonify({'valid': False, 'message': 'Ungültiger Einladungscode'})
+
+    # Prüfen ob bereits verwendet
+    if inv['is_used']:
+        conn.close()
+        return jsonify({'valid': False, 'message': 'Dieser Einladungscode wurde bereits verwendet'})
+
+    # Prüfen ob abgelaufen
+    if inv['expires_at']:
+        expires_at = datetime.fromisoformat(inv['expires_at'])
+        if datetime.now() > expires_at:
+            conn.close()
+            return jsonify({'valid': False, 'message': 'Dieser Einladungscode ist abgelaufen'})
+
+    # Prüfen ob Organisation voll ist
+    user_count = conn.execute('''SELECT COUNT(*) as count
+                                FROM users
+                                WHERE organization_id = ?''',
+                            (inv['organization_id'],)).fetchone()['count']
+
+    if user_count >= inv['max_users']:
+        conn.close()
+        return jsonify({'valid': False, 'message': 'Die Organisation hat bereits die maximale Anzahl an Benutzern erreicht'})
+
+    conn.close()
+
+    return jsonify({
+        'valid': True,
+        'organization_name': inv['org_name'],
+        'organization_id': inv['organization_id']
+    })
+
 # ============= USER MANAGEMENT =============
 
 @app.route('/api/users', methods=['GET', 'POST'])
@@ -1109,7 +1264,7 @@ def organization_info():
 def users():
     """Benutzerverwaltung (nur Admin)"""
     conn = get_db_connection()
-    
+
     if request.method == 'POST':
         data = request.json
         username = data.get('username')
