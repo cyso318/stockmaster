@@ -685,13 +685,13 @@
         }
 
         /* Kompakte Ansicht - verstecke bestimmte Spalten */
-        body.view-compact table th:nth-child(4), /* Kategorie */
-        body.view-compact table td:nth-child(4),
-        body.view-compact table th:nth-child(6), /* Bestand */
-        body.view-compact table td:nth-child(6),
-        body.view-compact table th:nth-child(7), /* Preis */
-        body.view-compact table td:nth-child(7) {
-            display: none;
+        body.view-compact .table-header-row .table-cell:nth-child(3), /* Kategorie Header */
+        body.view-compact .table-row .table-cell:nth-child(3), /* Kategorie */
+        body.view-compact .table-header-row .table-cell:nth-child(5), /* Bestand Header */
+        body.view-compact .table-row .table-cell:nth-child(5), /* Bestand */
+        body.view-compact .table-header-row .table-cell:nth-child(6), /* Preis Header */
+        body.view-compact .table-row .table-cell:nth-child(6) /* Preis */ {
+            display: none !important;
         }
 
         td {
@@ -2182,6 +2182,16 @@
                                     <div class="burger-menu-item-content">
                                         <div class="burger-menu-item-title">Ansicht</div>
                                         <div class="burger-menu-item-desc" id="view-mode-text">Standard</div>
+                                    </div>
+                                </button>
+                                <button onclick="window.open('/label-designer', '_blank'); closeBurgerMenu();" class="burger-menu-item">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                        <path d="M7 7h.01M7 12h10M7 17h10"/>
+                                    </svg>
+                                    <div class="burger-menu-item-content">
+                                        <div class="burger-menu-item-title">Label Designer</div>
+                                        <div class="burger-menu-item-desc">Eigene Etiketten gestalten</div>
                                     </div>
                                 </button>
                                 <button onclick="window.location.href='/profile'" class="burger-menu-item">

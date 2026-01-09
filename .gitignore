@@ -58,3 +58,7 @@ backups/
 test_*.py
 debug_*.py
 *_test.py
+UPLOAD_ANLEITUNG.txt
+deploy_invitation_system.bat
+check_server_logs.txt
+SCHNELLE_LÖSUNG.txt
