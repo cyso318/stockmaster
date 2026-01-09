@@ -190,11 +190,17 @@ function setupCanvasInteraction() {
             isResizing = true;
             dragStartX = e.clientX;
             dragStartY = e.clientY;
-        } else if (canvasElement && selectedElement) {
-            isDragging = true;
-            const rect = canvasElement.getBoundingClientRect();
-            dragStartX = e.clientX - rect.left;
-            dragStartY = e.clientY - rect.top;
+        } else if (canvasElement) {
+            // Selektiere das Element wenn es noch nicht selektiert ist
+            const elementId = canvasElement.id;
+            const element = labelElements.find(e => e.id === elementId);
+            if (element) {
+                selectElement(elementId);
+                isDragging = true;
+                const rect = canvasElement.getBoundingClientRect();
+                dragStartX = e.clientX - rect.left;
+                dragStartY = e.clientY - rect.top;
+            }
         }
     });
 
