@@ -163,6 +163,12 @@
             background: var(--primary);
             border: 1px solid white;
             border-radius: 50%;
+            display: none;
+            z-index: 10;
+        }
+
+        .canvas-element.selected .resize-handle {
+            display: block;
         }
 
         .resize-handle.nw { top: -4px; left: -4px; cursor: nw-resize; }
