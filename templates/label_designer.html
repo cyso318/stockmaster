@@ -145,6 +145,18 @@
             cursor: move;
             transition: border-color 0.2s;
             padding: 4px;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .canvas-element * {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            pointer-events: none;
         }
 
         .canvas-element.selected {
@@ -165,6 +177,7 @@
             border-radius: 50%;
             display: none;
             z-index: 10;
+            pointer-events: auto;
         }
 
         .canvas-element.selected .resize-handle {

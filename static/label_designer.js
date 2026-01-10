@@ -134,11 +134,11 @@ function renderElement(element) {
         }
         div.textContent = content;
     } else if (element.type === 'barcode') {
-        div.innerHTML = '<div style="width: 100%; height: 100%; background: linear-gradient(90deg, black 2px, white 2px, white 4px, black 4px, black 6px, white 6px, white 10px, black 10px); background-size: 10px 100%; display: flex; align-items: flex-end; justify-content: center; font-size: 10px; padding-bottom: 2px; pointer-events: none;">ITEM00000001</div>';
+        div.innerHTML = '<div style="width: 100%; height: 100%; background: linear-gradient(90deg, black 2px, white 2px, white 4px, black 4px, black 6px, white 6px, white 10px, black 10px); background-size: 10px 100%; display: flex; align-items: flex-end; justify-content: center; font-size: 10px; padding-bottom: 2px;">ITEM00000001</div>';
     } else if (element.type === 'qrcode') {
-        div.innerHTML = '<div style="width: 100%; height: 100%; background: white; border: 2px solid black; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); gap: 1px; pointer-events: none;"><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div></div>';
+        div.innerHTML = '<div style="width: 100%; height: 100%; background: white; border: 2px solid black; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); gap: 1px;"><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div><div></div><div style="background: black;"></div></div>';
     } else if (element.type === 'image') {
-        div.innerHTML = '<div style="width: 100%; height: 100%; background: #e2e8f0; border: 2px dashed #94a3b8; display: flex; align-items: center; justify-content: center; border-radius: 4px; pointer-events: none;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>';
+        div.innerHTML = '<div style="width: 100%; height: 100%; background: #e2e8f0; border: 2px dashed #94a3b8; display: flex; align-items: center; justify-content: center; border-radius: 4px;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>';
     }
 
     // Resize Handles
@@ -181,6 +181,11 @@ function setupCanvasInteraction() {
 
     // Drag & Resize Logic
     document.addEventListener('mousedown', function(e) {
+        // Verhindere Textauswahl beim Dragging
+        if (e.target.closest('.canvas-element')) {
+            e.preventDefault();
+        }
+
         // Finde das canvas-element (entweder direkt oder als parent)
         const canvasElement = e.target.classList.contains('canvas-element')
             ? e.target
