@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Labels Drucken - StockMaster</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8fafc;
+            padding: 20px;
+        }
+
+        .print-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .print-header h1 {
+            font-size: 24px;
+            color: #0f172a;
+        }
+
+        .print-header p {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 8px;
+        }
+
+        .labels-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10mm;
+            justify-content: center;
+        }
+
+        .label {
+            background: white;
+            border: 1px solid #e2e8f0;
+            position: relative;
+            page-break-inside: avoid;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .label-element {
+            position: absolute;
+            user-select: none;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .actions {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .print-header,
+            .actions {
+                display: none;
+            }
+
+            .labels-container {
+                gap: 0;
+            }
+
+            .label {
+                border: none;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-header">
+        <h1>Custom Labels</h1>
+        <p>Template: {{ template.name }} ({{ template.width_mm }}mm × {{ template.height_mm }}mm)</p>
+        <p>{{ items|length }} Label(s)</p>
+    </div>
+
+    <div class="actions">
+        <button onclick="window.print()" class="btn btn-primary">🖨️ Drucken</button>
+        <button onclick="window.close()" class="btn btn-secondary">Schließen</button>
+    </div>
+
+    <div class="labels-container">
+        {% for item in items %}
+        <div class="label" style="width: {{ template.width_mm * 3.78 }}px; height: {{ template.height_mm * 3.78 }}px;">
+            {% set layout = template.layout_config | fromjson %}
+            {% for element in layout.elements %}
+            <div class="label-element"
+                 style="left: {{ element.x }}px;
+                        top: {{ element.y }}px;
+                        width: {{ element.width }}px;
+                        height: {{ element.height }}px;
+                        font-size: {{ element.fontSize }}px;
+                        font-weight: {{ element.fontWeight }};
+                        text-align: {{ element.textAlign }};
+                        color: {{ element.color }};
+                        background-color: {{ element.backgroundColor }};">
+
+                {% if element.type == 'text' %}
+                    {% if element.field == 'custom' %}
+                        {{ element.customText }}
+                    {% elif element.field == 'name' %}
+                        {{ item.name }}
+                    {% elif element.field == 'sku' %}
+                        {{ item.sku or '-' }}
+                    {% elif element.field == 'category' %}
+                        {{ item.category_name or '-' }}
+                    {% elif element.field == 'location' %}
+                        {{ item.location_name or '-' }}
+                    {% elif element.field == 'price' %}
+                        {{ "%.2f"|format(item.price) }} €
+                    {% elif element.field == 'quantity' %}
+                        {{ item.quantity }} {{ item.unit }}
+                    {% endif %}
+
+                {% elif element.type == 'barcode' %}
+                    <img src="{{ item.barcode }}" style="width: 100%; height: 100%; object-fit: contain;">
+
+                {% elif element.type == 'qrcode' %}
+                    <img src="{{ item.qrcode }}" style="width: 100%; height: 100%; object-fit: contain;">
+
+                {% elif element.type == 'image' %}
+                    {% if item.image_path %}
+                    <img src="/static/uploads/items/{{ item.image_path }}" style="width: 100%; height: 100%; object-fit: contain;">
+                    {% else %}
+                    <div style="width: 100%; height: 100%; background: #e2e8f0; border: 2px dashed #94a3b8; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

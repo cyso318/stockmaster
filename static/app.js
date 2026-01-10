@@ -1101,9 +1101,10 @@ async function showQRCode(itemId) {
                     <div style="text-align: center; padding: 20px;">
                         <img src="${result.barcode}" style="width: 100%; max-width: 400px; height: auto; margin: 20px auto; display: block;">
                         <p style="margin: 20px 0; color: #666;">Scannen Sie diesen Barcode mit einem Scanner</p>
-                        <div style="display: flex; gap: 10px; justify-content: center;">
+                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                             <button onclick="downloadBarcode(${itemId})" class="btn">💾 Herunterladen</button>
                             <button onclick="printSingleBarcode(${itemId})" class="btn btn-secondary">🖨️ Drucken</button>
+                            <button onclick="printCustomLabel(${itemId})" class="btn" style="background: #8b5cf6; color: white;">🎨 Custom Label</button>
                             <button onclick="this.parentElement.parentElement.parentElement.parentElement.remove()" class="btn btn-secondary">Schließen</button>
                         </div>
                     </div>
@@ -1134,6 +1135,70 @@ function printBarcodes() {
     if (location) url += `location=${location}&`;
 
     window.open(url, '_blank');
+}
+
+async function printCustomLabel(itemId) {
+    // Lade verfügbare Templates
+    try {
+        const result = await apiCall('/api/label-templates');
+
+        if (!result.success || result.templates.length === 0) {
+            showAlert('Keine Label-Templates gefunden. Erstelle zuerst ein Template im Label Designer.', 'info');
+            return;
+        }
+
+        // Erstelle Auswahl-Modal
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+
+        let templateOptions = result.templates.map(t =>
+            `<div class="template-option" onclick="selectLabelTemplate(${itemId}, ${t.id})" style="padding: 15px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: all 0.2s;">
+                <div style="font-weight: 600; font-size: 16px;">${t.name}</div>
+                <div style="font-size: 13px; color: #64748b; margin-top: 4px;">${t.width_mm}mm × ${t.height_mm}mm</div>
+                ${t.description ? `<div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${t.description}</div>` : ''}
+            </div>`
+        ).join('');
+
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h3>Wähle ein Label-Template</h3>
+                    <span class="close" onclick="this.parentElement.parentElement.parentElement.remove()">&times;</span>
+                </div>
+                <div style="padding: 20px; max-height: 400px; overflow-y: auto;">
+                    ${templateOptions}
+                </div>
+                <div style="padding: 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button onclick="window.open('/label-designer', '_blank')" class="btn" style="background: #8b5cf6; color: white;">+ Neues Template erstellen</button>
+                    <button onclick="this.parentElement.parentElement.parentElement.remove()" class="btn btn-secondary">Abbrechen</button>
+                </div>
+            </div>
+        `;
+
+        // Hover-Effekt für Template-Optionen
+        modal.querySelectorAll('.template-option').forEach(option => {
+            option.addEventListener('mouseenter', () => {
+                option.style.borderColor = '#8b5cf6';
+                option.style.backgroundColor = '#f5f3ff';
+            });
+            option.addEventListener('mouseleave', () => {
+                option.style.borderColor = '#e2e8f0';
+                option.style.backgroundColor = 'transparent';
+            });
+        });
+
+        document.body.appendChild(modal);
+    } catch (error) {
+        showAlert('Fehler beim Laden der Templates', 'error');
+    }
+}
+
+function selectLabelTemplate(itemId, templateId) {
+    // Schließe Modal
+    document.querySelectorAll('.modal').forEach(m => m.remove());
+
+    // Öffne Print-Seite mit Template
+    window.open(`/api/items/print-custom-labels?item_id=${itemId}&template_id=${templateId}`, '_blank');
 }
 
 // ============= BARCODE SCANNER =============
