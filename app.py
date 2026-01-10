@@ -2785,6 +2785,12 @@ def label_designer():
     """Label Designer Seite"""
     return render_template('label_designer.html')
 
+@app.route('/label-preview')
+@login_required
+def label_preview():
+    """Label Preview Seite"""
+    return render_template('label_preview.html')
+
 @app.route('/api/label-templates', methods=['GET', 'POST'])
 @login_required
 def label_templates():
