@@ -2080,7 +2080,9 @@
                                 <div class="burger-menu-user">{{ session.get('username', 'Benutzer') }}</div>
                                 <div class="burger-menu-org">{{ session.get('organization_name', 'Organisation') }}</div>
                             </div>
-                            <div class="burger-menu-items">
+                            <div class="burger-menu-items" style="max-height: calc(100vh - 180px); overflow-y: auto;">
+                                <!-- Druck & Labels -->
+                                <div style="padding: 8px 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Druck & Labels</div>
                                 <button onclick="printBarcodes(); closeBurgerMenu();" class="burger-menu-item">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <rect x="2" y="6" width="20" height="12" rx="2"/>
@@ -2088,16 +2090,49 @@
                                     </svg>
                                     <div class="burger-menu-item-content">
                                         <div class="burger-menu-item-title">Barcodes drucken</div>
-                                        <div class="burger-menu-item-desc">Alle Barcodes generieren</div>
                                     </div>
                                 </button>
+                                <button onclick="window.open('/label-designer', '_blank'); closeBurgerMenu();" class="burger-menu-item">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                        <path d="M7 7h.01M7 12h10M7 17h10"/>
+                                    </svg>
+                                    <div class="burger-menu-item-content">
+                                        <div class="burger-menu-item-title">Label Designer</div>
+                                    </div>
+                                </button>
+
+                                <!-- Daten & Export -->
+                                <div class="burger-menu-divider"></div>
+                                <div style="padding: 8px 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Daten & Export</div>
+                                <button onclick="window.location.href='/api/export/excel'" class="burger-menu-item">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                    <div class="burger-menu-item-content">
+                                        <div class="burger-menu-item-title">Excel / CSV Export</div>
+                                    </div>
+                                </button>
+                                <button onclick="window.location.href='/api/export/pdf'" class="burger-menu-item">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                    <div class="burger-menu-item-content">
+                                        <div class="burger-menu-item-title">PDF Export</div>
+                                    </div>
+                                </button>
+
+                                <!-- Backup -->
+                                <div class="burger-menu-divider"></div>
+                                <div style="padding: 8px 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Backup</div>
                                 <button onclick="syncToCloud(); closeBurgerMenu();" class="burger-menu-item">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
                                     </svg>
                                     <div class="burger-menu-item-content">
                                         <div class="burger-menu-item-title">Backup erstellen</div>
-                                        <div class="burger-menu-item-desc" id="backup-status-text">Google Drive Backup</div>
                                     </div>
                                 </button>
                                 {% if session.get('is_admin') %}
@@ -2109,43 +2144,14 @@
                                     </svg>
                                     <div class="burger-menu-item-content">
                                         <div class="burger-menu-item-title">Backups verwalten</div>
-                                        <div class="burger-menu-item-desc">Wiederherstellen & Herunterladen</div>
                                     </div>
                                 </button>
                                 {% endif %}
-                                <div class="burger-menu-divider"></div>
-                                <button onclick="window.location.href='/api/export/excel'" class="burger-menu-item">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                        <polyline points="14 2 14 8 20 8"/>
-                                    </svg>
-                                    <div class="burger-menu-item-content">
-                                        <div class="burger-menu-item-title">Excel Export</div>
-                                        <div class="burger-menu-item-desc">Daten als XLSX exportieren</div>
-                                    </div>
-                                </button>
-                                <button onclick="window.location.href='/api/export/pdf'" class="burger-menu-item">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                        <polyline points="14 2 14 8 20 8"/>
-                                    </svg>
-                                    <div class="burger-menu-item-content">
-                                        <div class="burger-menu-item-title">PDF Export</div>
-                                        <div class="burger-menu-item-desc">Druckbereites Dokument</div>
-                                    </div>
-                                </button>
-                                <button onclick="exportCSV(); closeBurgerMenu();" class="burger-menu-item">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                        <polyline points="14 2 14 8 20 8"/>
-                                    </svg>
-                                    <div class="burger-menu-item-content">
-                                        <div class="burger-menu-item-title">CSV Export</div>
-                                        <div class="burger-menu-item-desc">Kompatibles Format</div>
-                                    </div>
-                                </button>
+
+                                <!-- Verwaltung (nur Admin) -->
                                 {% if session.get('is_admin') %}
                                 <div class="burger-menu-divider"></div>
+                                <div style="padding: 8px 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Verwaltung</div>
                                 <button onclick="window.location.href='/users'" class="burger-menu-item">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -2155,7 +2161,6 @@
                                     </svg>
                                     <div class="burger-menu-item-content">
                                         <div class="burger-menu-item-title">Benutzerverwaltung</div>
-                                        <div class="burger-menu-item-desc">Benutzer & Rollen verwalten</div>
                                     </div>
                                 </button>
                                 <button onclick="showInvitationManager(); closeBurgerMenu();" class="burger-menu-item">
@@ -2164,14 +2169,16 @@
                                         <line x1="16" y1="2" x2="16" y2="6"/>
                                         <line x1="8" y1="2" x2="8" y2="6"/>
                                         <line x1="3" y1="10" x2="21" y2="10"/>
-                                        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
                                     </svg>
                                     <div class="burger-menu-item-content">
                                         <div class="burger-menu-item-title">Einladungscodes</div>
-                                        <div class="burger-menu-item-desc">Neue Benutzer einladen</div>
                                     </div>
                                 </button>
                                 {% endif %}
+
+                                <!-- Einstellungen -->
+                                <div class="burger-menu-divider"></div>
+                                <div style="padding: 8px 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Einstellungen</div>
                                 <button onclick="toggleViewMode(); closeBurgerMenu();" class="burger-menu-item">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <rect x="3" y="3" width="7" height="7"/>
@@ -2184,16 +2191,6 @@
                                         <div class="burger-menu-item-desc" id="view-mode-text">Standard</div>
                                     </div>
                                 </button>
-                                <button onclick="window.open('/label-designer', '_blank'); closeBurgerMenu();" class="burger-menu-item">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="3" y="3" width="18" height="18" rx="2"/>
-                                        <path d="M7 7h.01M7 12h10M7 17h10"/>
-                                    </svg>
-                                    <div class="burger-menu-item-content">
-                                        <div class="burger-menu-item-title">Label Designer</div>
-                                        <div class="burger-menu-item-desc">Eigene Etiketten gestalten</div>
-                                    </div>
-                                </button>
                                 <button onclick="window.location.href='/profile'" class="burger-menu-item">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -2201,7 +2198,6 @@
                                     </svg>
                                     <div class="burger-menu-item-content">
                                         <div class="burger-menu-item-title">Profil</div>
-                                        <div class="burger-menu-item-desc">Einstellungen & Profil</div>
                                     </div>
                                 </button>
                             </div>
@@ -2725,6 +2721,28 @@
         </div>
     </div>
 
+    <!-- Wartungshistorie Modal -->
+    <div id="maintenance-history-modal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3>📋 Wartungshistorie</h3>
+                <span class="close" onclick="closeModal('maintenance-history-modal')">&times;</span>
+            </div>
+            <div style="padding: 20px;">
+                <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="font-weight: 600; font-size: 18px; margin-bottom: 5px;" id="history-item-name">-</div>
+                    <div style="font-size: 14px; color: #64748b;">
+                        <span id="history-item-sku"></span>
+                    </div>
+                </div>
+
+                <div id="maintenance-history-list" style="max-height: 500px; overflow-y: auto;">
+                    <!-- Historie wird hier geladen -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Einladungscode-Manager Modal -->
     <div id="invitation-manager-modal" class="modal">
         <div class="modal-content" style="max-width: 800px;">
@@ -2973,6 +2991,9 @@
                                 <button onclick="openMaintenanceCompleteModal(${item.id}, '${item.name}', ${item.maintenance_interval_days})" class="btn btn-success btn-sm">
                                     Wartung durchführen
                                 </button>
+                                <button onclick="showMaintenanceHistory(${item.id}, '${item.name}', '${item.sku || ''}')" class="btn btn-sm" style="background: #8b5cf6; color: white;">
+                                    📋 Historie
+                                </button>
                                 <button onclick="editItem(${item.id})" class="btn btn-sm">
                                     Bearbeiten
                                 </button>
@@ -3042,6 +3063,86 @@
                 }
             } catch (error) {
                 showAlert('Fehler beim Abschließen der Wartung: ' + error.message, 'error');
+            }
+        }
+
+        // Zeige Wartungshistorie für einen Artikel
+        async function showMaintenanceHistory(itemId, itemName, itemSku) {
+            document.getElementById('history-item-name').textContent = itemName;
+            document.getElementById('history-item-sku').textContent = itemSku ? `SKU: ${itemSku}` : '';
+
+            document.getElementById('maintenance-history-modal').classList.add('active');
+
+            // Lade Historie
+            try {
+                const response = await fetch(`/api/maintenance/history/${itemId}`);
+                const history = await response.json();
+
+                const container = document.getElementById('maintenance-history-list');
+
+                if (history.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #94a3b8;">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 16px;">
+                                <path d="M9 11l3 3L22 4"/>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                            </svg>
+                            <p style="font-size: 16px; margin: 0;">Noch keine Wartungen dokumentiert</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                history.forEach((entry, index) => {
+                    const date = new Date(entry.maintenance_date).toLocaleDateString('de-DE');
+                    const createdAt = new Date(entry.created_at).toLocaleDateString('de-DE', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    html += `
+                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 15px; ${index === 0 ? 'border-left: 4px solid #22c55e;' : ''}">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                <div>
+                                    <div style="font-weight: 600; font-size: 16px; color: #0f172a; margin-bottom: 4px;">
+                                        📅 Wartung am ${date}
+                                        ${index === 0 ? '<span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">Letzte</span>' : ''}
+                                    </div>
+                                    <div style="font-size: 13px; color: #64748b;">
+                                        Dokumentiert am ${createdAt}
+                                    </div>
+                                </div>
+                            </div>
+
+                            ${entry.performed_by ? `
+                                <div style="font-size: 14px; color: #475569; margin-bottom: 8px;">
+                                    <strong>Durchgeführt von:</strong> ${entry.performed_by}
+                                </div>
+                            ` : ''}
+
+                            ${entry.notes ? `
+                                <div style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-top: 12px;">
+                                    <div style="font-size: 13px; font-weight: 500; color: #64748b; margin-bottom: 6px;">Notizen:</div>
+                                    <div style="font-size: 14px; color: #0f172a; white-space: pre-wrap;">${entry.notes}</div>
+                                </div>
+                            ` : ''}
+
+                            ${entry.next_maintenance_date ? `
+                                <div style="margin-top: 12px; font-size: 13px; color: #64748b;">
+                                    Nächste Wartung geplant: <strong>${new Date(entry.next_maintenance_date).toLocaleDateString('de-DE')}</strong>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            } catch (error) {
+                showAlert('Fehler beim Laden der Historie: ' + error.message, 'error');
             }
         }
 
