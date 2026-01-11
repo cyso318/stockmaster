@@ -875,6 +875,14 @@ def profile():
                           username=session.get('username'),
                           is_admin=session.get('is_admin'))
 
+@app.route('/settings')
+@login_required
+def settings():
+    """Einstellungsseite"""
+    return render_template('settings.html',
+                          username=session.get('username'),
+                          is_admin=session.get('is_admin'))
+
 @app.route('/users')
 @admin_required
 def users_page():
@@ -1288,23 +1296,85 @@ def users():
     conn.close()
     return jsonify([dict(user) for user in users])
 
-@app.route('/api/users/<int:id>', methods=['DELETE'])
+@app.route('/api/users/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 @admin_required
 @csrf_protect_api()
-def delete_user(id):
-    """Benutzer löschen (nur Admin)"""
+def user_detail(id):
+    """Einzelner Benutzer - abrufen, aktualisieren oder löschen (nur Admin)"""
     conn = get_db_connection()
-    
-    # Verhindere Löschen des eigenen Accounts
-    user = conn.execute('SELECT username FROM users WHERE id = ?', (id,)).fetchone()
-    if user and user['username'] == session.get('username'):
+    organization_id = session.get('organization_id')
+
+    if request.method == 'GET':
+        # Einzelnen Benutzer abrufen
+        user = conn.execute('''SELECT id, username, email, is_admin, created_at, last_login
+                              FROM users
+                              WHERE id = ? AND organization_id = ?''',
+                          (id, organization_id)).fetchone()
         conn.close()
-        return jsonify({'success': False, 'message': 'Sie können Ihren eigenen Account nicht löschen'}), 400
-    
-    conn.execute('DELETE FROM users WHERE id = ?', (id,))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'message': 'Benutzer gelöscht'})
+
+        if not user:
+            return jsonify({'success': False, 'message': 'Benutzer nicht gefunden'}), 404
+
+        return jsonify(dict(user))
+
+    elif request.method == 'PUT':
+        # Benutzer aktualisieren
+        data = request.json
+        username = data.get('username')
+        email = data.get('email')
+        is_admin = data.get('is_admin', False)
+        password = data.get('password')  # Optional
+
+        # Prüfe ob Benutzer zur Organisation gehört
+        user = conn.execute('SELECT username FROM users WHERE id = ? AND organization_id = ?',
+                          (id, organization_id)).fetchone()
+
+        if not user:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Benutzer nicht gefunden'}), 404
+
+        try:
+            # Update Benutzerdaten
+            if password:
+                # Mit neuem Passwort
+                password_hash = generate_password_hash(password)
+                conn.execute('''UPDATE users
+                              SET username = ?, email = ?, is_admin = ?, password_hash = ?
+                              WHERE id = ? AND organization_id = ?''',
+                          (username, email, is_admin, password_hash, id, organization_id))
+            else:
+                # Ohne Passwort-Änderung
+                conn.execute('''UPDATE users
+                              SET username = ?, email = ?, is_admin = ?
+                              WHERE id = ? AND organization_id = ?''',
+                          (username, email, is_admin, id, organization_id))
+
+            conn.commit()
+            conn.close()
+            return jsonify({'success': True, 'message': 'Benutzer aktualisiert'})
+
+        except sqlite3.IntegrityError:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Benutzername bereits vergeben'}), 400
+
+    elif request.method == 'DELETE':
+        # Benutzer löschen
+        # Verhindere Löschen des eigenen Accounts
+        user = conn.execute('SELECT username FROM users WHERE id = ? AND organization_id = ?',
+                          (id, organization_id)).fetchone()
+
+        if not user:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Benutzer nicht gefunden'}), 404
+
+        if user['username'] == session.get('username'):
+            conn.close()
+            return jsonify({'success': False, 'message': 'Sie können Ihren eigenen Account nicht löschen'}), 400
+
+        conn.execute('DELETE FROM users WHERE id = ? AND organization_id = ?', (id, organization_id))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'message': 'Benutzer gelöscht'})
 
 @app.route('/api/profile/change-password', methods=['POST'])
 @login_required

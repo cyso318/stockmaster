@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Einstellungen - StockMaster</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-600: #4b5563;
+            --gray-900: #111827;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background-attachment: fixed;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 0;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .brand h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .tagline {
+            font-size: 13px;
+            opacity: 0.9;
+            margin: 4px 0 0 0;
+        }
+
+        .btn-header {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-header:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .settings-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .settings-section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setting-item {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .setting-item:first-child {
+            padding-top: 0;
+        }
+
+        .setting-info {
+            flex: 1;
+        }
+
+        .setting-label {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--gray-900);
+            margin-bottom: 5px;
+        }
+
+        .setting-desc {
+            font-size: 13px;
+            color: var(--gray-600);
+        }
+
+        .setting-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 28px;
+            background: var(--gray-200);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary);
+        }
+
+        .toggle-switch-handle {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active .toggle-switch-handle {
+            transform: translateX(22px);
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--gray-200);
+            color: var(--gray-900);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-300);
+        }
+
+        .current-value {
+            font-size: 13px;
+            color: var(--gray-600);
+            padding: 6px 12px;
+            background: var(--gray-100);
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="brand">
+                    <h1>⚙️ Einstellungen</h1>
+                    <p class="tagline">Personalisiere deine Erfahrung</p>
+                </div>
+            </div>
+            <button onclick="window.location.href='/'" class="btn-header">
+                ← Zurück zum Dashboard
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Anzeigeeinstellungen -->
+        <div class="settings-section">
+            <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                </svg>
+                Anzeige
+            </h2>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Ansichtsmodus</div>
+                    <div class="setting-desc">Wähle zwischen Standard (alle Spalten) und Kompakt (nur Name, Bild, Standort)</div>
+                </div>
+                <div class="setting-control">
+                    <span class="current-value" id="view-mode-display">Standard</span>
+                    <button onclick="toggleViewMode()" class="btn btn-primary">Umschalten</button>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Dark Mode</div>
+                    <div class="setting-desc">Dunkles Design für angenehmeres Arbeiten bei Nacht</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle-switch" id="dark-mode-toggle" onclick="toggleDarkModeFromSettings()">
+                        <div class="toggle-switch-handle"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Label & Druck -->
+        <div class="settings-section">
+            <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="6" width="20" height="12" rx="2"/>
+                    <path d="M6 9v6M9 9v6M12 9v6M15 9v6M18 9v6"/>
+                </svg>
+                Label & Druck
+            </h2>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Standard Druckformat</div>
+                    <div class="setting-desc">Legt das Standardformat für Barcode-Etiketten fest</div>
+                </div>
+                <div class="setting-control">
+                    <select id="default-print-format" onchange="savePrintFormat()">
+                        <option value="brother-62">Brother QL-700 (62mm)</option>
+                        <option value="dymo-54x25">DYMO (54x25mm)</option>
+                        <option value="a4-full">A4 Vollseite</option>
+                        <option value="a4-grid">A4 Raster (3x8)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Label Designer</div>
+                    <div class="setting-desc">Erstelle benutzerdefinierte Label-Designs</div>
+                </div>
+                <div class="setting-control">
+                    <button onclick="window.open('/label-designer', '_blank')" class="btn btn-secondary">
+                        Designer öffnen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- System -->
+        <div class="settings-section">
+            <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
+                </svg>
+                System
+            </h2>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Profil bearbeiten</div>
+                    <div class="setting-desc">Ändere deine Benutzerdaten und Passwort</div>
+                </div>
+                <div class="setting-control">
+                    <button onclick="window.location.href='/profile'" class="btn btn-secondary">
+                        Zum Profil
+                    </button>
+                </div>
+            </div>
+
+            {% if is_admin %}
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Benutzerverwaltung</div>
+                    <div class="setting-desc">Verwalte Benutzer und deren Berechtigungen</div>
+                </div>
+                <div class="setting-control">
+                    <button onclick="window.location.href='/users'" class="btn btn-secondary">
+                        Benutzer verwalten
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Abmelden</div>
+                    <div class="setting-desc">Von deinem Konto abmelden</div>
+                </div>
+                <div class="setting-control">
+                    <button onclick="if(confirm('Möchtest du dich wirklich abmelden?')) window.location.href='/logout'" class="btn btn-secondary">
+                        Abmelden
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Lade gespeicherte Einstellungen
+        document.addEventListener('DOMContentLoaded', function() {
+            // View Mode
+            const viewMode = localStorage.getItem('viewMode') || 'standard';
+            updateViewModeDisplay(viewMode);
+
+            // Dark Mode
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+                document.getElementById('dark-mode-toggle').classList.add('active');
+            }
+
+            // Print Format
+            const printFormat = localStorage.getItem('defaultPrintFormat') || 'brother-62';
+            document.getElementById('default-print-format').value = printFormat;
+        });
+
+        function toggleViewMode() {
+            const currentMode = localStorage.getItem('viewMode') || 'standard';
+            const newMode = currentMode === 'standard' ? 'compact' : 'standard';
+
+            localStorage.setItem('viewMode', newMode);
+            updateViewModeDisplay(newMode);
+
+            showNotification('Ansichtsmodus geändert zu: ' + (newMode === 'standard' ? 'Standard' : 'Kompakt'));
+        }
+
+        function updateViewModeDisplay(mode) {
+            const display = document.getElementById('view-mode-display');
+            if (mode === 'compact') {
+                display.textContent = 'Kompakt (Name, Bild, Standort)';
+            } else {
+                display.textContent = 'Standard (Alle Spalten)';
+            }
+        }
+
+        function toggleDarkModeFromSettings() {
+            const toggle = document.getElementById('dark-mode-toggle');
+            const isActive = toggle.classList.contains('active');
+
+            if (isActive) {
+                toggle.classList.remove('active');
+                localStorage.setItem('darkMode', 'false');
+                showNotification('Dark Mode deaktiviert');
+            } else {
+                toggle.classList.add('active');
+                localStorage.setItem('darkMode', 'true');
+                showNotification('Dark Mode aktiviert');
+            }
+
+            // Trigger auf der Hauptseite
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({ type: 'toggleDarkMode' }, '*');
+            }
+        }
+
+        function savePrintFormat() {
+            const format = document.getElementById('default-print-format').value;
+            localStorage.setItem('defaultPrintFormat', format);
+            showNotification('Standard-Druckformat gespeichert');
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--success);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: var(--shadow-lg);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
