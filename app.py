@@ -1298,9 +1298,12 @@ def users():
 
 @app.route('/api/users/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 @admin_required
-@csrf_protect_api()
 def user_detail(id):
     """Einzelner Benutzer - abrufen, aktualisieren oder löschen (nur Admin)"""
+    # CSRF-Schutz nur für modifizierende Anfragen
+    if request.method in ['PUT', 'DELETE']:
+        csrf.protect()
+
     conn = get_db_connection()
     organization_id = session.get('organization_id')
 
