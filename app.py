@@ -61,6 +61,14 @@ csrf = CSRFProtect(app)
 app.config['WTF_CSRF_CHECK_DEFAULT'] = False  # Wir kontrollieren CSRF manuell
 app.config['WTF_CSRF_HEADERS'] = ['X-CSRFToken']
 
+# Jinja2 Filter für JSON parsing
+@app.template_filter('fromjson')
+def fromjson_filter(value):
+    """Parse JSON string to Python object"""
+    if isinstance(value, str):
+        return json.loads(value)
+    return value
+
 # Security Headers
 if os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True':
     # Produktion mit HTTPS
