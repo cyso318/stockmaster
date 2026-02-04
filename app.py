@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for, Response
 from werkzeug.middleware.proxy_fix import ProxyFix
 import sqlite3
 import os
@@ -329,6 +329,69 @@ def init_db():
                   FOREIGN KEY (item_id) REFERENCES items (id),
                   FOREIGN KEY (user_id) REFERENCES users (id))''')
 
+    # Wartungstypen Tabelle
+    c.execute('''CREATE TABLE IF NOT EXISTS maintenance_types
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  organization_id INTEGER NOT NULL,
+                  name TEXT NOT NULL,
+                  description TEXT,
+                  color TEXT DEFAULT '#6366f1',
+                  icon TEXT DEFAULT 'wrench',
+                  default_interval_days INTEGER,
+                  is_active BOOLEAN DEFAULT 1,
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  FOREIGN KEY (organization_id) REFERENCES organizations (id),
+                  UNIQUE(organization_id, name))''')
+
+    # Wartungspläne pro Artikel (ersetzt alte Einzelfelder auf items)
+    c.execute('''CREATE TABLE IF NOT EXISTS item_maintenance_schedules
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  item_id INTEGER NOT NULL,
+                  maintenance_type_id INTEGER NOT NULL,
+                  interval_days INTEGER NOT NULL,
+                  last_date DATE,
+                  next_date DATE,
+                  assigned_user_id INTEGER,
+                  is_active BOOLEAN DEFAULT 1,
+                  priority TEXT DEFAULT 'normal',
+                  notes TEXT,
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  FOREIGN KEY (item_id) REFERENCES items (id) ON DELETE CASCADE,
+                  FOREIGN KEY (maintenance_type_id) REFERENCES maintenance_types (id),
+                  FOREIGN KEY (assigned_user_id) REFERENCES users (id),
+                  UNIQUE(item_id, maintenance_type_id))''')
+
+    # Wartungs-Checklisten pro Typ
+    c.execute('''CREATE TABLE IF NOT EXISTS maintenance_checklists
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  maintenance_type_id INTEGER NOT NULL,
+                  organization_id INTEGER NOT NULL,
+                  name TEXT NOT NULL,
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  FOREIGN KEY (maintenance_type_id) REFERENCES maintenance_types (id) ON DELETE CASCADE,
+                  FOREIGN KEY (organization_id) REFERENCES organizations (id))''')
+
+    # Checklisten-Prüfpunkte
+    c.execute('''CREATE TABLE IF NOT EXISTS checklist_items
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  checklist_id INTEGER NOT NULL,
+                  description TEXT NOT NULL,
+                  sort_order INTEGER DEFAULT 0,
+                  is_required BOOLEAN DEFAULT 0,
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  FOREIGN KEY (checklist_id) REFERENCES maintenance_checklists (id) ON DELETE CASCADE)''')
+
+    # Checklisten-Ergebnisse bei Wartungsabschluss
+    c.execute('''CREATE TABLE IF NOT EXISTS maintenance_checklist_results
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  maintenance_history_id INTEGER NOT NULL,
+                  checklist_item_id INTEGER NOT NULL,
+                  is_checked BOOLEAN DEFAULT 0,
+                  notes TEXT,
+                  FOREIGN KEY (maintenance_history_id) REFERENCES maintenance_history (id) ON DELETE CASCADE,
+                  FOREIGN KEY (checklist_item_id) REFERENCES checklist_items (id))''')
+
     # Label Templates Tabelle
     c.execute('''CREATE TABLE IF NOT EXISTS label_templates
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -345,6 +408,21 @@ def init_db():
 
     conn.commit()
 
+    # Migrationen: Erweitere maintenance_history um neue Felder
+    for col_statement in [
+        "ALTER TABLE maintenance_history ADD COLUMN maintenance_type_id INTEGER REFERENCES maintenance_types(id)",
+        "ALTER TABLE maintenance_history ADD COLUMN schedule_id INTEGER REFERENCES item_maintenance_schedules(id)",
+        "ALTER TABLE maintenance_history ADD COLUMN cost REAL DEFAULT 0",
+        "ALTER TABLE maintenance_history ADD COLUMN cost_parts REAL DEFAULT 0",
+        "ALTER TABLE maintenance_history ADD COLUMN cost_labor REAL DEFAULT 0",
+        "ALTER TABLE maintenance_history ADD COLUMN cost_notes TEXT",
+        "ALTER TABLE maintenance_history ADD COLUMN organization_id INTEGER REFERENCES organizations(id)",
+    ]:
+        try:
+            c.execute(col_statement)
+        except:
+            pass
+
     # Migrationen: Füge image_path Feld hinzu falls nicht vorhanden
     try:
         # Prüfe ob image_path bereits existiert
@@ -358,6 +436,17 @@ def init_db():
             print("OK: image_path Feld hinzugefügt")
     except Exception as e:
         print(f"Info: Migration image_path - {e}")
+
+    # Migration: Benachrichtigungs-Einstellungen pro Benutzer
+    for col_statement in [
+        "ALTER TABLE users ADD COLUMN notify_low_stock BOOLEAN DEFAULT 1",
+        "ALTER TABLE users ADD COLUMN notify_maintenance BOOLEAN DEFAULT 1",
+        "ALTER TABLE users ADD COLUMN notify_backup BOOLEAN DEFAULT 0",
+    ]:
+        try:
+            c.execute(col_statement)
+        except:
+            pass
 
     # Erstelle Standard-Organisation und Admin-Benutzer falls nicht vorhanden
     try:
@@ -394,6 +483,79 @@ def init_db():
             print("="*60 + "\n")
     except Exception as e:
         print(f"Fehler beim Erstellen der Standard-Organisation: {e}")
+
+    # Erstelle Standard-Wartungstypen für alle Organisationen die noch keine haben
+    try:
+        orgs = conn.execute('SELECT id FROM organizations').fetchall()
+        for org in orgs:
+            type_count = conn.execute(
+                'SELECT COUNT(*) as count FROM maintenance_types WHERE organization_id = ?',
+                (org['id'],)
+            ).fetchone()['count']
+            if type_count == 0:
+                default_types = [
+                    ('Inspektion', 'Regelmäßige Sichtprüfung und Kontrolle', '#3b82f6', 'search', 90),
+                    ('Reparatur', 'Fehlerbehebung und Instandsetzung', '#ef4444', 'tool', None),
+                    ('Kalibrierung', 'Justierung und Eichung von Messgeräten', '#8b5cf6', 'target', 365),
+                    ('Reinigung', 'Reinigung und Pflege', '#22c55e', 'sparkles', 30),
+                    ('Software-Update', 'Firmware- und Software-Aktualisierung', '#06b6d4', 'cpu', 180),
+                    ('Sicherheitsprüfung', 'Prüfung der Sicherheitseinrichtungen', '#f59e0b', 'shield', 365),
+                ]
+                for name, desc, color, icon, interval in default_types:
+                    conn.execute(
+                        '''INSERT INTO maintenance_types
+                           (organization_id, name, description, color, icon, default_interval_days)
+                           VALUES (?, ?, ?, ?, ?, ?)''',
+                        (org['id'], name, desc, color, icon, interval)
+                    )
+                conn.commit()
+                print(f"OK: Standard-Wartungstypen für Organisation {org['id']} erstellt")
+    except Exception as e:
+        print(f"Info: Wartungstypen-Seed - {e}")
+
+    # Migration: Bestehende Wartungsdaten von items nach item_maintenance_schedules überführen
+    try:
+        schedule_count = conn.execute('SELECT COUNT(*) as count FROM item_maintenance_schedules').fetchone()['count']
+        if schedule_count == 0:
+            items_with_maintenance = conn.execute('''
+                SELECT i.id, i.organization_id, i.maintenance_interval_days,
+                       i.last_maintenance_date, i.next_maintenance_date, i.maintenance_notes
+                FROM items i
+                WHERE i.requires_maintenance = 1
+                AND i.maintenance_interval_days IS NOT NULL
+            ''').fetchall()
+
+            migrated = 0
+            for item in items_with_maintenance:
+                mtype = conn.execute(
+                    'SELECT id FROM maintenance_types WHERE organization_id = ? AND name = ?',
+                    (item['organization_id'], 'Inspektion')
+                ).fetchone()
+                if mtype:
+                    conn.execute('''
+                        INSERT OR IGNORE INTO item_maintenance_schedules
+                        (item_id, maintenance_type_id, interval_days, last_date, next_date, notes, is_active)
+                        VALUES (?, ?, ?, ?, ?, ?, 1)
+                    ''', (
+                        item['id'], mtype['id'], item['maintenance_interval_days'],
+                        item['last_maintenance_date'], item['next_maintenance_date'],
+                        item['maintenance_notes']
+                    ))
+                    migrated += 1
+
+            # Backfill organization_id auf bestehende maintenance_history Einträge
+            conn.execute('''
+                UPDATE maintenance_history SET organization_id = (
+                    SELECT i.organization_id FROM items i WHERE i.id = maintenance_history.item_id
+                )
+                WHERE organization_id IS NULL
+            ''')
+
+            conn.commit()
+            if migrated > 0:
+                print(f"OK: {migrated} bestehende Wartungsdaten migriert")
+    except Exception as e:
+        print(f"Info: Wartungsdaten-Migration - {e}")
 
     conn.close()
 
@@ -879,9 +1041,20 @@ def logout():
 @login_required
 def profile():
     """Profil-Seite"""
+    conn = get_db_connection()
+    user = conn.execute(
+        'SELECT email, notify_low_stock, notify_maintenance, notify_backup FROM users WHERE id = ?',
+        (session.get('user_id'),)
+    ).fetchone()
+    conn.close()
+
     return render_template('profile.html',
                           username=session.get('username'),
-                          is_admin=session.get('is_admin'))
+                          is_admin=session.get('is_admin'),
+                          email=user['email'] if user else '',
+                          notify_low_stock=user['notify_low_stock'] if user else 1,
+                          notify_maintenance=user['notify_maintenance'] if user else 1,
+                          notify_backup=user['notify_backup'] if user else 0)
 
 @app.route('/settings')
 @login_required
@@ -1403,6 +1576,32 @@ def change_user_password():
         return jsonify({'success': True, 'message': message})
     else:
         return jsonify({'success': False, 'message': message}), 400
+
+@app.route('/api/profile/update-notifications', methods=['POST'])
+@login_required
+@csrf_protect_api()
+def update_notification_settings():
+    """E-Mail und Benachrichtigungs-Einstellungen aktualisieren"""
+    data = request.json
+    user_id = session.get('user_id')
+
+    email = data.get('email', '').strip()
+    notify_low_stock = 1 if data.get('notify_low_stock', True) else 0
+    notify_maintenance = 1 if data.get('notify_maintenance', True) else 0
+    notify_backup = 1 if data.get('notify_backup', False) else 0
+
+    try:
+        conn = get_db_connection()
+        conn.execute('''UPDATE users
+                       SET email = ?, notify_low_stock = ?, notify_maintenance = ?, notify_backup = ?
+                       WHERE id = ?''',
+                    (email if email else None, notify_low_stock, notify_maintenance, notify_backup, user_id))
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Benachrichtigungs-Einstellungen gespeichert'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/users/export', methods=['POST'])
 @admin_required
@@ -2183,79 +2382,398 @@ def delete_item_image(id):
         conn.close()
         return jsonify({'success': False, 'message': f'Fehler beim Löschen: {str(e)}'}), 500
 
-@app.route('/api/maintenance/due')
+# ============================================================
+# WARTUNGSMANAGEMENT API
+# ============================================================
+
+# --- Wartungstypen CRUD ---
+
+@app.route('/api/maintenance/types', methods=['GET', 'POST'])
 @login_required
-def get_due_maintenance():
-    """Gibt alle Artikel zurück, bei denen Wartung fällig ist"""
+def maintenance_types_api():
+    """CRUD für Wartungstypen"""
     conn = get_db_connection()
+    organization_id = session.get('organization_id')
 
-    # Anzahl Tage im Voraus für Warnung (Standard: 30 Tage)
-    warning_days = request.args.get('warning_days', 30, type=int)
+    if request.method == 'POST':
+        data = request.json
+        name = sanitize_string(data.get('name'), 100)
+        if not name:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Name ist erforderlich'}), 400
 
-    from datetime import datetime, timedelta
-    warning_date = (datetime.now() + timedelta(days=warning_days)).strftime('%Y-%m-%d')
-    today = datetime.now().strftime('%Y-%m-%d')
+        try:
+            cursor = conn.execute('''INSERT INTO maintenance_types
+                (organization_id, name, description, color, icon, default_interval_days)
+                VALUES (?, ?, ?, ?, ?, ?)''',
+                (organization_id, name,
+                 sanitize_string(data.get('description'), 500),
+                 data.get('color', '#6366f1'),
+                 data.get('icon', 'wrench'),
+                 data.get('default_interval_days')))
+            conn.commit()
+            conn.close()
+            return jsonify({'success': True, 'message': 'Wartungstyp erstellt', 'id': cursor.lastrowid})
+        except sqlite3.IntegrityError:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Ein Wartungstyp mit diesem Namen existiert bereits'}), 400
 
-    items = conn.execute('''
-        SELECT i.*, c.name as category_name, l.name as location_name,
-               CASE
-                   WHEN i.next_maintenance_date <= ? THEN 'overdue'
-                   WHEN i.next_maintenance_date <= ? THEN 'due_soon'
-                   ELSE 'ok'
-               END as maintenance_status,
-               julianday(i.next_maintenance_date) - julianday('now') as days_until_maintenance
-        FROM items i
-        LEFT JOIN categories c ON i.category_id = c.id
-        LEFT JOIN locations l ON i.location_id = l.id
-        WHERE i.requires_maintenance = 1
-        AND i.next_maintenance_date IS NOT NULL
-        AND i.next_maintenance_date <= ?
-        ORDER BY i.next_maintenance_date ASC
-    ''', (today, warning_date, warning_date)).fetchall()
-
+    types = conn.execute('''SELECT * FROM maintenance_types
+                           WHERE organization_id = ? AND is_active = 1
+                           ORDER BY name''', (organization_id,)).fetchall()
     conn.close()
-    return jsonify([dict(item) for item in items])
+    return jsonify([dict(t) for t in types])
 
-@app.route('/api/maintenance/complete/<int:item_id>', methods=['POST'])
+@app.route('/api/maintenance/types/<int:type_id>', methods=['GET', 'PUT', 'DELETE'])
 @login_required
 @csrf_protect_api()
-def complete_maintenance(item_id):
-    """Markiert eine Wartung als abgeschlossen"""
+def maintenance_type_detail(type_id):
+    """Einzelnen Wartungstyp abrufen, bearbeiten oder löschen"""
     conn = get_db_connection()
-    data = request.json
+    organization_id = session.get('organization_id')
 
-    from datetime import datetime, timedelta
+    mt = conn.execute('SELECT * FROM maintenance_types WHERE id = ? AND organization_id = ?',
+                      (type_id, organization_id)).fetchone()
+    if not mt:
+        conn.close()
+        return jsonify({'success': False, 'message': 'Wartungstyp nicht gefunden'}), 404
 
-    maintenance_date = data.get('maintenance_date', datetime.now().strftime('%Y-%m-%d'))
-    notes = data.get('notes', '')
-    performed_by = session.get('username')
+    if request.method == 'DELETE':
+        conn.execute('UPDATE maintenance_types SET is_active = 0 WHERE id = ?', (type_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'message': 'Wartungstyp deaktiviert'})
 
-    # Hole aktuellen Artikel
-    item = conn.execute('SELECT * FROM items WHERE id = ?', (item_id,)).fetchone()
+    if request.method == 'PUT':
+        data = request.json
+        conn.execute('''UPDATE maintenance_types SET
+            name = ?, description = ?, color = ?, icon = ?, default_interval_days = ?
+            WHERE id = ? AND organization_id = ?''',
+            (sanitize_string(data.get('name'), 100),
+             sanitize_string(data.get('description'), 500),
+             data.get('color', mt['color']),
+             data.get('icon', mt['icon']),
+             data.get('default_interval_days'),
+             type_id, organization_id))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'message': 'Wartungstyp aktualisiert'})
+
+    conn.close()
+    return jsonify(dict(mt))
+
+# --- Wartungspläne (Schedules) ---
+
+@app.route('/api/maintenance/schedules/<int:item_id>', methods=['GET', 'POST'])
+@login_required
+def item_schedules_api(item_id):
+    """Wartungspläne eines Artikels abrufen oder hinzufügen"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+
+    item = conn.execute('SELECT id FROM items WHERE id = ? AND organization_id = ?',
+                        (item_id, organization_id)).fetchone()
     if not item:
         conn.close()
         return jsonify({'success': False, 'message': 'Artikel nicht gefunden'}), 404
 
+    if request.method == 'POST':
+        data = request.json
+        type_id = data.get('maintenance_type_id')
+        interval_days = data.get('interval_days')
+
+        if not type_id or not interval_days:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Wartungstyp und Intervall sind erforderlich'}), 400
+
+        next_date = data.get('next_date')
+        if not next_date and interval_days:
+            next_date = (datetime.now() + timedelta(days=int(interval_days))).strftime('%Y-%m-%d')
+
+        try:
+            cursor = conn.execute('''INSERT INTO item_maintenance_schedules
+                (item_id, maintenance_type_id, interval_days, last_date, next_date,
+                 assigned_user_id, priority, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                (item_id, type_id, interval_days,
+                 data.get('last_date'), next_date,
+                 data.get('assigned_user_id'),
+                 data.get('priority', 'normal'),
+                 sanitize_string(data.get('notes'), 1000)))
+            conn.commit()
+            conn.close()
+            return jsonify({'success': True, 'message': 'Wartungsplan hinzugefügt', 'id': cursor.lastrowid})
+        except sqlite3.IntegrityError:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Dieser Wartungstyp ist bereits für diesen Artikel konfiguriert'}), 400
+
+    schedules = conn.execute('''
+        SELECT ims.*, mt.name as type_name, mt.color as type_color, mt.icon as type_icon,
+               u.username as assigned_username
+        FROM item_maintenance_schedules ims
+        JOIN maintenance_types mt ON ims.maintenance_type_id = mt.id
+        LEFT JOIN users u ON ims.assigned_user_id = u.id
+        WHERE ims.item_id = ? AND ims.is_active = 1
+        ORDER BY ims.next_date ASC
+    ''', (item_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(s) for s in schedules])
+
+@app.route('/api/maintenance/schedules/entry/<int:schedule_id>', methods=['PUT', 'DELETE'])
+@login_required
+@csrf_protect_api()
+def schedule_entry_api(schedule_id):
+    """Einzelnen Wartungsplan bearbeiten oder entfernen"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+
+    schedule = conn.execute('''
+        SELECT ims.* FROM item_maintenance_schedules ims
+        JOIN items i ON ims.item_id = i.id
+        WHERE ims.id = ? AND i.organization_id = ?
+    ''', (schedule_id, organization_id)).fetchone()
+
+    if not schedule:
+        conn.close()
+        return jsonify({'success': False, 'message': 'Wartungsplan nicht gefunden'}), 404
+
+    if request.method == 'DELETE':
+        conn.execute('UPDATE item_maintenance_schedules SET is_active = 0 WHERE id = ?', (schedule_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'message': 'Wartungsplan entfernt'})
+
+    data = request.json
+    conn.execute('''UPDATE item_maintenance_schedules SET
+        interval_days = ?, next_date = ?, assigned_user_id = ?,
+        priority = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?''',
+        (data.get('interval_days', schedule['interval_days']),
+         data.get('next_date', schedule['next_date']),
+         data.get('assigned_user_id', schedule['assigned_user_id']),
+         data.get('priority', schedule['priority']),
+         sanitize_string(data.get('notes'), 1000),
+         schedule_id))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'message': 'Wartungsplan aktualisiert'})
+
+@app.route('/api/maintenance/schedules/entry/<int:schedule_id>/assign', methods=['PUT'])
+@login_required
+@csrf_protect_api()
+def assign_schedule(schedule_id):
+    """Benutzer einem Wartungsplan zuweisen"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+    data = request.json
+
+    schedule = conn.execute('''
+        SELECT ims.* FROM item_maintenance_schedules ims
+        JOIN items i ON ims.item_id = i.id
+        WHERE ims.id = ? AND i.organization_id = ?
+    ''', (schedule_id, organization_id)).fetchone()
+
+    if not schedule:
+        conn.close()
+        return jsonify({'success': False, 'message': 'Wartungsplan nicht gefunden'}), 404
+
+    conn.execute('UPDATE item_maintenance_schedules SET assigned_user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                 (data.get('assigned_user_id'), schedule_id))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'message': 'Benutzer zugewiesen'})
+
+# --- Fällige Wartungen (Übersicht) ---
+
+@app.route('/api/maintenance/due')
+@login_required
+def get_due_maintenance():
+    """Gibt alle fälligen Wartungen zurück (basierend auf Wartungsplänen)"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+
+    warning_days = request.args.get('warning_days', 30, type=int)
+    type_id = request.args.get('type_id', type=int)
+    assigned_user_id = request.args.get('assigned_user_id', type=int)
+    status_filter = request.args.get('status')
+
+    warning_date = (datetime.now() + timedelta(days=warning_days)).strftime('%Y-%m-%d')
+    today = datetime.now().strftime('%Y-%m-%d')
+
+    query = '''
+        SELECT ims.id as schedule_id, ims.interval_days, ims.last_date, ims.next_date,
+               ims.priority, ims.notes as schedule_notes, ims.assigned_user_id,
+               i.id as item_id, i.name as item_name, i.sku, i.image_path,
+               mt.id as type_id, mt.name as type_name, mt.color as type_color, mt.icon as type_icon,
+               c.name as category_name, l.name as location_name,
+               u.username as assigned_username,
+               CASE
+                   WHEN ims.next_date <= ? THEN 'overdue'
+                   WHEN ims.next_date <= ? THEN 'due_soon'
+                   ELSE 'ok'
+               END as maintenance_status,
+               julianday(ims.next_date) - julianday('now') as days_until_maintenance
+        FROM item_maintenance_schedules ims
+        JOIN items i ON ims.item_id = i.id
+        JOIN maintenance_types mt ON ims.maintenance_type_id = mt.id
+        LEFT JOIN categories c ON i.category_id = c.id
+        LEFT JOIN locations l ON i.location_id = l.id
+        LEFT JOIN users u ON ims.assigned_user_id = u.id
+        WHERE ims.is_active = 1
+        AND i.organization_id = ?
+        AND ims.next_date IS NOT NULL
+        AND ims.next_date <= ?
+    '''
+    params = [today, warning_date, organization_id, warning_date]
+
+    if type_id:
+        query += ' AND mt.id = ?'
+        params.append(type_id)
+    if assigned_user_id:
+        query += ' AND ims.assigned_user_id = ?'
+        params.append(assigned_user_id)
+
+    query += ' ORDER BY ims.next_date ASC'
+
+    items = conn.execute(query, params).fetchall()
+    result = [dict(item) for item in items]
+
+    if status_filter and status_filter != 'all':
+        result = [r for r in result if r['maintenance_status'] == status_filter]
+
+    conn.close()
+    return jsonify(result)
+
+@app.route('/api/maintenance/my-tasks')
+@login_required
+def get_my_maintenance_tasks():
+    """Gibt dem aktuellen Benutzer zugewiesene Wartungen zurück"""
+    conn = get_db_connection()
+    user_id = session.get('user_id')
+    organization_id = session.get('organization_id')
+    today = datetime.now().strftime('%Y-%m-%d')
+
+    tasks = conn.execute('''
+        SELECT ims.id as schedule_id, ims.interval_days, ims.last_date, ims.next_date,
+               ims.priority, ims.notes as schedule_notes,
+               i.id as item_id, i.name as item_name, i.sku,
+               mt.name as type_name, mt.color as type_color, mt.icon as type_icon,
+               c.name as category_name, l.name as location_name,
+               CASE
+                   WHEN ims.next_date <= ? THEN 'overdue'
+                   ELSE 'due_soon'
+               END as maintenance_status,
+               julianday(ims.next_date) - julianday('now') as days_until_maintenance
+        FROM item_maintenance_schedules ims
+        JOIN items i ON ims.item_id = i.id
+        JOIN maintenance_types mt ON ims.maintenance_type_id = mt.id
+        LEFT JOIN categories c ON i.category_id = c.id
+        LEFT JOIN locations l ON i.location_id = l.id
+        WHERE ims.assigned_user_id = ?
+        AND ims.is_active = 1
+        AND i.organization_id = ?
+        ORDER BY ims.next_date ASC
+    ''', (today, user_id, organization_id)).fetchall()
+
+    conn.close()
+    return jsonify([dict(t) for t in tasks])
+
+@app.route('/api/maintenance/calendar')
+@login_required
+def get_maintenance_calendar():
+    """Gibt alle Wartungstermine in einem Datumsbereich zurück"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+
+    start = request.args.get('start', datetime.now().strftime('%Y-%m-01'))
+    end_default = (datetime.now().replace(day=1) + timedelta(days=32)).replace(day=1).strftime('%Y-%m-%d')
+    end = request.args.get('end', end_default)
+
+    events = conn.execute('''
+        SELECT ims.id as schedule_id, ims.next_date, ims.priority,
+               i.id as item_id, i.name as item_name,
+               mt.name as type_name, mt.color as type_color,
+               CASE WHEN ims.next_date <= date('now') THEN 'overdue' ELSE 'upcoming' END as status
+        FROM item_maintenance_schedules ims
+        JOIN items i ON ims.item_id = i.id
+        JOIN maintenance_types mt ON ims.maintenance_type_id = mt.id
+        WHERE ims.is_active = 1
+        AND i.organization_id = ?
+        AND ims.next_date BETWEEN ? AND ?
+        ORDER BY ims.next_date ASC
+    ''', (organization_id, start, end)).fetchall()
+
+    conn.close()
+    return jsonify([dict(e) for e in events])
+
+# --- Wartung abschließen (erweitert) ---
+
+@app.route('/api/maintenance/complete/<int:schedule_id>', methods=['POST'])
+@login_required
+@csrf_protect_api()
+def complete_maintenance(schedule_id):
+    """Schließt eine Wartung ab (mit Checkliste und Kosten)"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+    data = request.json
+
+    schedule = conn.execute('''
+        SELECT ims.*, i.id as item_id, i.organization_id, mt.name as type_name
+        FROM item_maintenance_schedules ims
+        JOIN items i ON ims.item_id = i.id
+        JOIN maintenance_types mt ON ims.maintenance_type_id = mt.id
+        WHERE ims.id = ? AND i.organization_id = ?
+    ''', (schedule_id, organization_id)).fetchone()
+
+    if not schedule:
+        conn.close()
+        return jsonify({'success': False, 'message': 'Wartungsplan nicht gefunden'}), 404
+
+    maintenance_date = data.get('maintenance_date', datetime.now().strftime('%Y-%m-%d'))
+    notes = data.get('notes', '')
+    performed_by = session.get('username')
+    user_id = session.get('user_id')
+
+    # Kosten
+    cost_parts = float(data.get('cost_parts', 0) or 0)
+    cost_labor = float(data.get('cost_labor', 0) or 0)
+    cost = cost_parts + cost_labor
+    cost_notes = sanitize_string(data.get('cost_notes'), 500)
+
     # Berechne nächstes Wartungsdatum
-    if item['maintenance_interval_days']:
-        maintenance_dt = datetime.strptime(maintenance_date, '%Y-%m-%d')
-        next_maintenance = (maintenance_dt + timedelta(days=item['maintenance_interval_days'])).strftime('%Y-%m-%d')
-    else:
-        next_maintenance = None
+    maintenance_dt = datetime.strptime(maintenance_date, '%Y-%m-%d')
+    next_maintenance = (maintenance_dt + timedelta(days=schedule['interval_days'])).strftime('%Y-%m-%d')
 
-    # Aktualisiere Artikel
+    # Aktualisiere Schedule
+    conn.execute('''UPDATE item_maintenance_schedules SET
+        last_date = ?, next_date = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?''', (maintenance_date, next_maintenance, schedule_id))
+
+    # Aktualisiere auch die alten Felder auf dem Item (Rückwärtskompatibilität)
     conn.execute('''UPDATE items SET
-                   last_maintenance_date = ?,
-                   next_maintenance_date = ?,
-                   updated_at = CURRENT_TIMESTAMP
-                   WHERE id = ?''',
-                (maintenance_date, next_maintenance, item_id))
+        last_maintenance_date = ?, next_maintenance_date = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?''', (maintenance_date, next_maintenance, schedule['item_id']))
 
-    # Füge zur Wartungshistorie hinzu
-    conn.execute('''INSERT INTO maintenance_history
-                   (item_id, maintenance_date, performed_by, notes, next_maintenance_date)
-                   VALUES (?, ?, ?, ?, ?)''',
-                (item_id, maintenance_date, performed_by, notes, next_maintenance))
+    # Erstelle Historien-Eintrag
+    cursor = conn.execute('''INSERT INTO maintenance_history
+        (item_id, user_id, maintenance_date, performed_by, notes, next_maintenance_date,
+         maintenance_type_id, schedule_id, cost, cost_parts, cost_labor, cost_notes, organization_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        (schedule['item_id'], user_id, maintenance_date, performed_by, notes, next_maintenance,
+         schedule['maintenance_type_id'], schedule_id, cost, cost_parts, cost_labor, cost_notes,
+         organization_id))
+
+    history_id = cursor.lastrowid
+
+    # Checklisten-Ergebnisse speichern
+    checklist_results = data.get('checklist_results', [])
+    for result in checklist_results:
+        conn.execute('''INSERT INTO maintenance_checklist_results
+            (maintenance_history_id, checklist_item_id, is_checked, notes)
+            VALUES (?, ?, ?, ?)''',
+            (history_id, result.get('checklist_item_id'),
+             result.get('is_checked', False),
+             sanitize_string(result.get('notes'), 500)))
 
     conn.commit()
     conn.close()
@@ -2263,21 +2781,431 @@ def complete_maintenance(item_id):
     return jsonify({
         'success': True,
         'message': 'Wartung erfolgreich abgeschlossen',
-        'next_maintenance_date': next_maintenance
+        'next_maintenance_date': next_maintenance,
+        'history_id': history_id
     })
+
+# --- Wartungshistorie (erweitert) ---
 
 @app.route('/api/maintenance/history/<int:item_id>')
 @login_required
 def get_maintenance_history(item_id):
-    """Gibt die Wartungshistorie eines Artikels zurück"""
+    """Gibt die erweiterte Wartungshistorie eines Artikels zurück"""
     conn = get_db_connection()
+    organization_id = session.get('organization_id')
 
-    history = conn.execute('''SELECT * FROM maintenance_history
-                             WHERE item_id = ?
-                             ORDER BY maintenance_date DESC''', (item_id,)).fetchall()
+    history = conn.execute('''
+        SELECT mh.*, mt.name as type_name, mt.color as type_color
+        FROM maintenance_history mh
+        LEFT JOIN maintenance_types mt ON mh.maintenance_type_id = mt.id
+        WHERE mh.item_id = ?
+        AND (mh.organization_id = ? OR mh.organization_id IS NULL)
+        ORDER BY mh.maintenance_date DESC
+    ''', (item_id, organization_id)).fetchall()
+
+    result = []
+    for h in history:
+        entry = dict(h)
+        # Checklisten-Ergebnisse laden
+        if h['id']:
+            checklist = conn.execute('''
+                SELECT mcr.*, ci.description as item_description, ci.is_required
+                FROM maintenance_checklist_results mcr
+                JOIN checklist_items ci ON mcr.checklist_item_id = ci.id
+                WHERE mcr.maintenance_history_id = ?
+            ''', (h['id'],)).fetchall()
+            entry['checklist_results'] = [dict(c) for c in checklist]
+        result.append(entry)
 
     conn.close()
-    return jsonify([dict(h) for h in history])
+    return jsonify(result)
+
+# --- Checklisten ---
+
+@app.route('/api/maintenance/checklists/<int:type_id>', methods=['GET', 'POST'])
+@login_required
+def maintenance_checklists_api(type_id):
+    """Checkliste eines Wartungstyps abrufen oder erstellen/aktualisieren"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+
+    mt = conn.execute('SELECT id FROM maintenance_types WHERE id = ? AND organization_id = ?',
+                      (type_id, organization_id)).fetchone()
+    if not mt:
+        conn.close()
+        return jsonify({'success': False, 'message': 'Wartungstyp nicht gefunden'}), 404
+
+    if request.method == 'POST':
+        data = request.json
+        checklist_name = sanitize_string(data.get('name', 'Standard-Checkliste'), 200)
+        items_data = data.get('items', [])
+
+        # Bestehende Checkliste suchen oder erstellen
+        existing = conn.execute('''SELECT id FROM maintenance_checklists
+                                  WHERE maintenance_type_id = ? AND organization_id = ?''',
+                               (type_id, organization_id)).fetchone()
+
+        if existing:
+            checklist_id = existing['id']
+            conn.execute('UPDATE maintenance_checklists SET name = ? WHERE id = ?',
+                        (checklist_name, checklist_id))
+            conn.execute('DELETE FROM checklist_items WHERE checklist_id = ?', (checklist_id,))
+        else:
+            cursor = conn.execute('''INSERT INTO maintenance_checklists
+                (maintenance_type_id, organization_id, name)
+                VALUES (?, ?, ?)''', (type_id, organization_id, checklist_name))
+            checklist_id = cursor.lastrowid
+
+        for idx, item in enumerate(items_data):
+            conn.execute('''INSERT INTO checklist_items
+                (checklist_id, description, sort_order, is_required)
+                VALUES (?, ?, ?, ?)''',
+                (checklist_id, sanitize_string(item.get('description'), 500),
+                 idx, item.get('is_required', False)))
+
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'message': 'Checkliste gespeichert', 'id': checklist_id})
+
+    # GET: Checkliste laden
+    checklist = conn.execute('''SELECT mc.*, ci.id as item_id, ci.description, ci.sort_order, ci.is_required
+        FROM maintenance_checklists mc
+        LEFT JOIN checklist_items ci ON mc.id = ci.checklist_id
+        WHERE mc.maintenance_type_id = ? AND mc.organization_id = ?
+        ORDER BY ci.sort_order ASC
+    ''', (type_id, organization_id)).fetchall()
+
+    if not checklist:
+        conn.close()
+        return jsonify({'id': None, 'name': None, 'items': []})
+
+    result = {
+        'id': checklist[0]['id'],
+        'name': checklist[0]['name'],
+        'items': [{'id': c['item_id'], 'description': c['description'],
+                   'sort_order': c['sort_order'], 'is_required': bool(c['is_required'])}
+                  for c in checklist if c['item_id']]
+    }
+    conn.close()
+    return jsonify(result)
+
+@app.route('/api/maintenance/checklist-results/<int:history_id>')
+@login_required
+def get_checklist_results(history_id):
+    """Checklisten-Ergebnisse einer abgeschlossenen Wartung abrufen"""
+    conn = get_db_connection()
+
+    results = conn.execute('''
+        SELECT mcr.*, ci.description as item_description, ci.is_required
+        FROM maintenance_checklist_results mcr
+        JOIN checklist_items ci ON mcr.checklist_item_id = ci.id
+        WHERE mcr.maintenance_history_id = ?
+        ORDER BY ci.sort_order ASC
+    ''', (history_id,)).fetchall()
+
+    conn.close()
+    return jsonify([dict(r) for r in results])
+
+# --- Wartungsstatistiken & Berichte ---
+
+@app.route('/api/maintenance/stats')
+@login_required
+def get_maintenance_stats():
+    """Übersichts-Statistiken zum Wartungsmanagement"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+    today = datetime.now().strftime('%Y-%m-%d')
+    seven_days = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
+    month_start = datetime.now().replace(day=1).strftime('%Y-%m-%d')
+
+    overdue = conn.execute('''
+        SELECT COUNT(*) as count FROM item_maintenance_schedules ims
+        JOIN items i ON ims.item_id = i.id
+        WHERE ims.is_active = 1 AND i.organization_id = ?
+        AND ims.next_date IS NOT NULL AND ims.next_date <= ?
+    ''', (organization_id, today)).fetchone()['count']
+
+    due_soon = conn.execute('''
+        SELECT COUNT(*) as count FROM item_maintenance_schedules ims
+        JOIN items i ON ims.item_id = i.id
+        WHERE ims.is_active = 1 AND i.organization_id = ?
+        AND ims.next_date IS NOT NULL AND ims.next_date > ? AND ims.next_date <= ?
+    ''', (organization_id, today, seven_days)).fetchone()['count']
+
+    ok_count = conn.execute('''
+        SELECT COUNT(*) as count FROM item_maintenance_schedules ims
+        JOIN items i ON ims.item_id = i.id
+        WHERE ims.is_active = 1 AND i.organization_id = ?
+        AND ims.next_date IS NOT NULL AND ims.next_date > ?
+    ''', (organization_id, seven_days)).fetchone()['count']
+
+    monthly_cost = conn.execute('''
+        SELECT COALESCE(SUM(cost), 0) as total FROM maintenance_history
+        WHERE organization_id = ? AND maintenance_date >= ?
+    ''', (organization_id, month_start)).fetchone()['total']
+
+    # Compliance-Rate: Pünktlich abgeschlossene Wartungen der letzten 90 Tage
+    ninety_days_ago = (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')
+    total_completed = conn.execute('''
+        SELECT COUNT(*) as count FROM maintenance_history
+        WHERE organization_id = ? AND maintenance_date >= ?
+    ''', (organization_id, ninety_days_ago)).fetchone()['count']
+
+    on_time = conn.execute('''
+        SELECT COUNT(*) as count FROM maintenance_history mh
+        JOIN item_maintenance_schedules ims ON mh.schedule_id = ims.id
+        WHERE mh.organization_id = ? AND mh.maintenance_date >= ?
+        AND mh.maintenance_date <= date(mh.next_maintenance_date, '-' || ims.interval_days || ' days', '+3 days')
+    ''', (organization_id, ninety_days_ago)).fetchone()['count']
+
+    compliance_rate = round((on_time / total_completed * 100) if total_completed > 0 else 100, 1)
+
+    conn.close()
+    return jsonify({
+        'overdue': overdue,
+        'due_soon': due_soon,
+        'ok': ok_count,
+        'monthly_cost': round(monthly_cost, 2),
+        'compliance_rate': compliance_rate,
+        'total_completed_90d': total_completed
+    })
+
+@app.route('/api/maintenance/cost-report')
+@login_required
+def get_maintenance_cost_report():
+    """Kostenbericht für Wartungen"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+
+    period = request.args.get('period', '12')  # Monate
+    group_by = request.args.get('group_by', 'month')  # month, type, item
+
+    months_ago = (datetime.now() - timedelta(days=int(period) * 30)).strftime('%Y-%m-%d')
+
+    if group_by == 'month':
+        data = conn.execute('''
+            SELECT strftime('%%Y-%%m', maintenance_date) as label,
+                   SUM(cost) as total_cost, SUM(cost_parts) as parts, SUM(cost_labor) as labor,
+                   COUNT(*) as count
+            FROM maintenance_history
+            WHERE organization_id = ? AND maintenance_date >= ?
+            GROUP BY strftime('%%Y-%%m', maintenance_date)
+            ORDER BY label ASC
+        ''', (organization_id, months_ago)).fetchall()
+    elif group_by == 'type':
+        data = conn.execute('''
+            SELECT COALESCE(mt.name, 'Unbekannt') as label, mt.color,
+                   SUM(mh.cost) as total_cost, SUM(mh.cost_parts) as parts, SUM(mh.cost_labor) as labor,
+                   COUNT(*) as count
+            FROM maintenance_history mh
+            LEFT JOIN maintenance_types mt ON mh.maintenance_type_id = mt.id
+            WHERE mh.organization_id = ? AND mh.maintenance_date >= ?
+            GROUP BY mh.maintenance_type_id
+            ORDER BY total_cost DESC
+        ''', (organization_id, months_ago)).fetchall()
+    else:  # item
+        data = conn.execute('''
+            SELECT i.name as label,
+                   SUM(mh.cost) as total_cost, SUM(mh.cost_parts) as parts, SUM(mh.cost_labor) as labor,
+                   COUNT(*) as count
+            FROM maintenance_history mh
+            JOIN items i ON mh.item_id = i.id
+            WHERE mh.organization_id = ? AND mh.maintenance_date >= ?
+            GROUP BY mh.item_id
+            ORDER BY total_cost DESC
+            LIMIT 20
+        ''', (organization_id, months_ago)).fetchall()
+
+    conn.close()
+    return jsonify([dict(d) for d in data])
+
+@app.route('/api/maintenance/compliance-report')
+@login_required
+def get_maintenance_compliance_report():
+    """Compliance-Bericht: Pünktlichkeit der Wartungen"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+    months_ago = (datetime.now() - timedelta(days=180)).strftime('%Y-%m-%d')
+
+    data = conn.execute('''
+        SELECT strftime('%%Y-%%m', mh.maintenance_date) as month,
+               COUNT(*) as total,
+               SUM(CASE WHEN mh.maintenance_date <= mh.next_maintenance_date THEN 1 ELSE 0 END) as on_time,
+               SUM(CASE WHEN mh.maintenance_date > mh.next_maintenance_date THEN 1 ELSE 0 END) as late
+        FROM maintenance_history mh
+        WHERE mh.organization_id = ? AND mh.maintenance_date >= ?
+        GROUP BY strftime('%%Y-%%m', mh.maintenance_date)
+        ORDER BY month ASC
+    ''', (organization_id, months_ago)).fetchall()
+
+    conn.close()
+    return jsonify([dict(d) for d in data])
+
+@app.route('/api/maintenance/export/csv')
+@login_required
+def export_maintenance_csv():
+    """Exportiert Wartungsdaten als CSV"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+
+    history = conn.execute('''
+        SELECT mh.maintenance_date, mh.performed_by, mh.notes,
+               mh.cost, mh.cost_parts, mh.cost_labor, mh.cost_notes,
+               i.name as item_name, i.sku,
+               COALESCE(mt.name, '-') as type_name,
+               mh.next_maintenance_date
+        FROM maintenance_history mh
+        JOIN items i ON mh.item_id = i.id
+        LEFT JOIN maintenance_types mt ON mh.maintenance_type_id = mt.id
+        WHERE (mh.organization_id = ? OR mh.organization_id IS NULL)
+        AND i.organization_id = ?
+        ORDER BY mh.maintenance_date DESC
+    ''', (organization_id, organization_id)).fetchall()
+    conn.close()
+
+    import csv
+    import io
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=';')
+    writer.writerow(['Datum', 'Artikel', 'SKU', 'Wartungstyp', 'Durchgeführt von',
+                     'Notizen', 'Kosten Gesamt', 'Materialkosten', 'Arbeitskosten',
+                     'Kostennotizen', 'Nächste Wartung'])
+
+    for h in history:
+        writer.writerow([
+            h['maintenance_date'], h['item_name'], h['sku'] or '',
+            h['type_name'], h['performed_by'] or '',
+            h['notes'] or '', h['cost'] or 0, h['cost_parts'] or 0,
+            h['cost_labor'] or 0, h['cost_notes'] or '',
+            h['next_maintenance_date'] or ''
+        ])
+
+    output.seek(0)
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=wartungsexport.csv'}
+    )
+
+@app.route('/api/maintenance/export/pdf')
+@login_required
+def export_maintenance_pdf():
+    """Exportiert Wartungsbericht als PDF"""
+    conn = get_db_connection()
+    organization_id = session.get('organization_id')
+
+    history = conn.execute('''
+        SELECT mh.maintenance_date, mh.performed_by, mh.notes,
+               mh.cost, mh.cost_parts, mh.cost_labor,
+               i.name as item_name, i.sku,
+               COALESCE(mt.name, '-') as type_name,
+               mh.next_maintenance_date
+        FROM maintenance_history mh
+        JOIN items i ON mh.item_id = i.id
+        LEFT JOIN maintenance_types mt ON mh.maintenance_type_id = mt.id
+        WHERE (mh.organization_id = ? OR mh.organization_id IS NULL)
+        AND i.organization_id = ?
+        ORDER BY mh.maintenance_date DESC
+    ''', (organization_id, organization_id)).fetchall()
+
+    # Statistiken
+    total_cost = sum((h['cost'] or 0) for h in history)
+    total_parts = sum((h['cost_parts'] or 0) for h in history)
+    total_labor = sum((h['cost_labor'] or 0) for h in history)
+
+    conn.close()
+
+    # PDF erstellen
+    pdf_output = BytesIO()
+    doc = SimpleDocTemplate(pdf_output, pagesize=landscape(A4),
+                           rightMargin=1*cm, leftMargin=1*cm,
+                           topMargin=1.5*cm, bottomMargin=1.5*cm)
+
+    elements = []
+    styles = getSampleStyleSheet()
+
+    # Titel
+    title_style = ParagraphStyle(
+        'MaintTitle',
+        parent=styles['Heading1'],
+        fontSize=22,
+        textColor=colors.HexColor('#6366f1'),
+        spaceAfter=20,
+        alignment=1
+    )
+    elements.append(Paragraph('StockMaster - Wartungsbericht', title_style))
+
+    # Datum und Statistiken
+    info_style = ParagraphStyle(
+        'MaintInfo',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=8,
+        alignment=1
+    )
+    date_str = datetime.now().strftime('%d.%m.%Y %H:%M')
+    elements.append(Paragraph(f'Erstellt am: {date_str}', info_style))
+    elements.append(Paragraph(
+        f'Wartungen gesamt: {len(history)} | '
+        f'Gesamtkosten: {total_cost:.2f} EUR | '
+        f'Material: {total_parts:.2f} EUR | '
+        f'Arbeit: {total_labor:.2f} EUR',
+        info_style
+    ))
+    elements.append(Spacer(1, 0.5*cm))
+
+    # Tabelle
+    table_data = [['Datum', 'Artikel', 'SKU', 'Typ', 'Durchgef. von',
+                   'Material (EUR)', 'Arbeit (EUR)', 'Gesamt (EUR)', 'Notizen']]
+
+    for h in history:
+        notes_text = (h['notes'] or '')[:40]
+        if len(h['notes'] or '') > 40:
+            notes_text += '...'
+        table_data.append([
+            h['maintenance_date'] or '-',
+            (h['item_name'] or '')[:25],
+            h['sku'] or '-',
+            h['type_name'] or '-',
+            (h['performed_by'] or '-')[:15],
+            f"{(h['cost_parts'] or 0):.2f}",
+            f"{(h['cost_labor'] or 0):.2f}",
+            f"{(h['cost'] or 0):.2f}",
+            notes_text
+        ])
+
+    col_widths = [2.2*cm, 4*cm, 2*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 5*cm]
+    table = Table(table_data, colWidths=col_widths)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6366f1')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (5, 1), (7, -1), 'RIGHT'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 7),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    elements.append(table)
+
+    doc.build(elements)
+    pdf_output.seek(0)
+
+    filename = f"Wartungsbericht_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+    return send_file(
+        pdf_output,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=filename
+    )
 
 # Dashboard Statistics API Endpoints
 @app.route('/api/stats/value-trend')
@@ -2379,10 +3307,14 @@ def get_recent_activity():
         SELECT
             i.name,
             mh.maintenance_date as timestamp,
-            'Wartung durchgeführt' as action,
+            CASE WHEN mt.name IS NOT NULL
+                THEN 'Wartung: ' || mt.name
+                ELSE 'Wartung durchgeführt'
+            END as action,
             mh.performed_by
         FROM maintenance_history mh
         JOIN items i ON mh.item_id = i.id
+        LEFT JOIN maintenance_types mt ON mh.maintenance_type_id = mt.id
         ORDER BY mh.maintenance_date DESC
         LIMIT 5
     ''').fetchall()
@@ -3098,22 +4030,22 @@ if __name__ == '__main__':
         from notification_service import get_notification_service
 
         notifications_enabled = os.getenv('NOTIFICATIONS_ENABLED', 'false').lower() == 'true'
-        notification_email = os.getenv('NOTIFICATION_EMAIL')
+        notification_email = os.getenv('NOTIFICATION_EMAIL')  # Fallback-Adresse
         notification_interval_hours = int(os.getenv('NOTIFICATION_CHECK_INTERVAL_HOURS', '24'))
 
-        if notifications_enabled and notification_email:
+        if notifications_enabled:
             notification_service = get_notification_service(
                 db_path=DB_PATH,
                 check_interval_hours=notification_interval_hours,
                 notification_email=notification_email
             )
             notification_service.start()
-            print(f"✓ E-Mail-Benachrichtigungen aktiviert (E-Mail: {notification_email}, Intervall: {notification_interval_hours}h)")
+            print(f"✓ E-Mail-Benachrichtigungen aktiviert (Intervall: {notification_interval_hours}h)")
+            print("  Benachrichtigungen werden an Benutzer mit hinterlegter E-Mail gesendet")
+            if notification_email:
+                print(f"  Fallback-E-Mail: {notification_email}")
         else:
-            if not notifications_enabled:
-                print("ℹ E-Mail-Benachrichtigungen deaktiviert (NOTIFICATIONS_ENABLED=false)")
-            elif not notification_email:
-                print("⚠️  E-Mail-Benachrichtigungen nicht konfiguriert (NOTIFICATION_EMAIL fehlt)")
+            print("ℹ E-Mail-Benachrichtigungen deaktiviert (NOTIFICATIONS_ENABLED=false)")
     except Exception as e:
         print(f"⚠️  E-Mail-Benachrichtigungen konnten nicht gestartet werden: {e}")
         print("   Die App läuft weiter ohne E-Mail-Benachrichtigungen")

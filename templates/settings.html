@@ -7,24 +7,6 @@
     <title>Einstellungen - StockMaster</title>
     <link rel="stylesheet" href="/static/style.css">
     <style>
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #764ba2;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-600: #4b5563;
-            --gray-900: #111827;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -32,10 +14,13 @@
         }
 
         body {
-            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #0b1120;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(6, 182, 212, 0.06) 0%, transparent 50%);
             background-attachment: fixed;
-            color: #333;
+            color: #f1f5f9;
             min-height: 100vh;
         }
 
@@ -46,11 +31,14 @@
         }
 
         header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            color: #f1f5f9;
             padding: 0;
             margin-bottom: 30px;
-            box-shadow: var(--shadow-lg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -72,55 +60,69 @@
         }
 
         .brand h1 {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 700;
+            background: linear-gradient(135deg, #818cf8, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin: 0;
         }
 
         .tagline {
             font-size: 13px;
-            opacity: 0.9;
+            color: #64748b;
             margin: 4px 0 0 0;
         }
 
         .btn-header {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #94a3b8;
             padding: 10px 20px;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            transition: all 0.2s;
+            transition: all 0.3s;
         }
 
         .btn-header:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(51, 65, 85, 0.5);
+            color: #f1f5f9;
+            border-color: rgba(255, 255, 255, 0.15);
             transform: translateY(-1px);
         }
 
         .settings-section {
-            background: white;
-            border-radius: 12px;
+            background: rgba(30, 41, 59, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
             padding: 30px;
             margin-bottom: 25px;
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
         }
 
         .settings-section h2 {
-            font-size: 20px;
+            font-size: 18px;
             margin-bottom: 20px;
-            color: var(--gray-900);
+            color: #f1f5f9;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
+        .settings-section h2 svg {
+            color: #818cf8;
+        }
+
         .setting-item {
             padding: 20px 0;
-            border-bottom: 1px solid var(--gray-200);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -142,13 +144,13 @@
         .setting-label {
             font-weight: 600;
             font-size: 15px;
-            color: var(--gray-900);
+            color: #f1f5f9;
             margin-bottom: 5px;
         }
 
         .setting-desc {
             font-size: 13px;
-            color: var(--gray-600);
+            color: #64748b;
         }
 
         .setting-control {
@@ -161,14 +163,17 @@
             position: relative;
             width: 50px;
             height: 28px;
-            background: var(--gray-200);
+            background: rgba(51, 65, 85, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 14px;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s;
         }
 
         .toggle-switch.active {
-            background: var(--primary);
+            background: linear-gradient(135deg, #6366f1, #06b6d4);
+            border-color: transparent;
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
         }
 
         .toggle-switch-handle {
@@ -177,10 +182,10 @@
             left: 3px;
             width: 22px;
             height: 22px;
-            background: white;
+            background: #f1f5f9;
             border-radius: 50%;
             transition: transform 0.3s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .toggle-switch.active .toggle-switch-handle {
@@ -188,50 +193,87 @@
         }
 
         select {
-            padding: 8px 12px;
-            border: 1px solid var(--gray-200);
-            border-radius: 8px;
+            padding: 10px 14px;
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-radius: 10px;
             font-size: 14px;
-            background: white;
+            background: rgba(15, 23, 42, 0.5);
+            color: #f1f5f9;
             cursor: pointer;
             min-width: 150px;
+            transition: all 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #818cf8;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        select option {
+            background: #1e293b;
+            color: #f1f5f9;
         }
 
         .btn {
             padding: 10px 20px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            transition: all 0.2s;
+            transition: all 0.3s;
         }
 
         .btn-primary {
-            background: var(--primary);
+            background: linear-gradient(135deg, #6366f1, #06b6d4);
             color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
         }
 
         .btn-primary:hover {
-            background: var(--primary-dark);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
             transform: translateY(-1px);
+            filter: brightness(1.08);
         }
 
         .btn-secondary {
-            background: var(--gray-200);
-            color: var(--gray-900);
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #94a3b8;
         }
 
         .btn-secondary:hover {
-            background: var(--gray-300);
+            background: rgba(51, 65, 85, 0.5);
+            color: #f1f5f9;
+            border-color: rgba(255, 255, 255, 0.15);
         }
 
         .current-value {
             font-size: 13px;
-            color: var(--gray-600);
+            color: #94a3b8;
             padding: 6px 12px;
-            background: var(--gray-100);
-            border-radius: 6px;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .setting-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .setting-control {
+                width: 100%;
+            }
+            select {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -274,17 +316,6 @@
                 </div>
             </div>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Dark Mode</div>
-                    <div class="setting-desc">Dunkles Design für angenehmeres Arbeiten bei Nacht</div>
-                </div>
-                <div class="setting-control">
-                    <div class="toggle-switch" id="dark-mode-toggle" onclick="toggleDarkModeFromSettings()">
-                        <div class="toggle-switch-handle"></div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Label & Druck -->
@@ -382,12 +413,6 @@
             const viewMode = localStorage.getItem('viewMode') || 'standard';
             updateViewModeDisplay(viewMode);
 
-            // Dark Mode
-            const darkMode = localStorage.getItem('darkMode') === 'true';
-            if (darkMode) {
-                document.getElementById('dark-mode-toggle').classList.add('active');
-            }
-
             // Print Format
             const printFormat = localStorage.getItem('defaultPrintFormat') || 'brother-62';
             document.getElementById('default-print-format').value = printFormat;
@@ -412,26 +437,6 @@
             }
         }
 
-        function toggleDarkModeFromSettings() {
-            const toggle = document.getElementById('dark-mode-toggle');
-            const isActive = toggle.classList.contains('active');
-
-            if (isActive) {
-                toggle.classList.remove('active');
-                localStorage.setItem('darkMode', 'false');
-                showNotification('Dark Mode deaktiviert');
-            } else {
-                toggle.classList.add('active');
-                localStorage.setItem('darkMode', 'true');
-                showNotification('Dark Mode aktiviert');
-            }
-
-            // Trigger auf der Hauptseite
-            if (window.opener && !window.opener.closed) {
-                window.opener.postMessage({ type: 'toggleDarkMode' }, '*');
-            }
-        }
-
         function savePrintFormat() {
             const format = document.getElementById('default-print-format').value;
             localStorage.setItem('defaultPrintFormat', format);
@@ -445,13 +450,17 @@
                 position: fixed;
                 top: 20px;
                 right: 20px;
-                background: var(--success);
-                color: white;
+                background: rgba(16, 185, 129, 0.15);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                color: #34d399;
                 padding: 15px 20px;
-                border-radius: 8px;
-                box-shadow: var(--shadow-lg);
+                border-radius: 12px;
+                border: 1px solid rgba(16, 185, 129, 0.25);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
                 z-index: 1000;
                 animation: slideIn 0.3s ease;
+                font-weight: 500;
             `;
 
             document.body.appendChild(notification);

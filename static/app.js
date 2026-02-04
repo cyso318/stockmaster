@@ -4,48 +4,9 @@ let locations = [];
 let items = [];
 let currentFilter = {};
 
-// ============= DARK MODE =============
-
-function initDarkMode() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    if (savedTheme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        updateThemeIcon(true);
-    }
-}
-
-function toggleDarkMode() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const isDark = currentTheme === 'dark';
-
-    if (isDark) {
-        document.documentElement.removeAttribute('data-theme');
-        localStorage.setItem('theme', 'light');
-        updateThemeIcon(false);
-    } else {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        localStorage.setItem('theme', 'dark');
-        updateThemeIcon(true);
-    }
-}
-
-function updateThemeIcon(isDark) {
-    const sunIcon = document.getElementById('theme-icon-sun');
-    const moonIcon = document.getElementById('theme-icon-moon');
-
-    if (isDark) {
-        sunIcon.style.display = 'none';
-        moonIcon.style.display = 'block';
-    } else {
-        sunIcon.style.display = 'block';
-        moonIcon.style.display = 'none';
-    }
-}
-
 // ============= INITIALISIERUNG =============
 
 document.addEventListener('DOMContentLoaded', function() {
-    initDarkMode();
     loadDashboard();
     loadCategories();
     loadLocations();
@@ -160,17 +121,31 @@ function closeModal(modalId) {
 
 function switchTab(tab) {
     // Tabs aktualisieren
-    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
-    
+    document.querySelectorAll('.nav-tab').forEach(t => {
+        t.classList.remove('active');
+        if (t.textContent.trim().toLowerCase().includes(tab === 'dashboard' ? 'dashboard' : tab === 'items' ? 'artikel' : tab === 'categories' ? 'kategor' : tab === 'locations' ? 'standort' : tab === 'maintenance' ? 'wartung' : '___')) {
+            t.classList.add('active');
+        }
+    });
+    // Fallback: event.target wenn vorhanden
+    if (typeof event !== 'undefined' && event && event.target && event.target.classList && event.target.classList.contains('nav-tab')) {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
     // Sections aktualisieren
     document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-    document.getElementById(`${tab}-section`).classList.add('active');
-    
+    const section = document.getElementById(`${tab}-section`);
+    if (section) section.classList.add('active');
+
     // Daten laden
     if (tab === 'items') loadItems();
     if (tab === 'categories') loadCategories();
     if (tab === 'locations') loadLocations();
+    if (tab === 'maintenance') {
+        if (typeof loadMaintenanceItems === 'function') loadMaintenanceItems();
+        if (typeof loadMaintenanceTypes === 'function') loadMaintenanceTypes();
+    }
 }
 
 async function apiCall(url, options = {}) {
@@ -844,15 +819,9 @@ function openItemModal(id = null) {
         document.getElementById('image-preview-container').style.display = 'none';
         document.getElementById('item-image-upload').value = '';
 
-        // Wartungsfelder laden
-        const requiresMaintenance = document.getElementById('item-requires-maintenance');
-        if (requiresMaintenance) {
-            requiresMaintenance.checked = item.requires_maintenance || false;
-            document.getElementById('item-maintenance-interval').value = item.maintenance_interval_days || '';
-            document.getElementById('item-last-maintenance').value = item.last_maintenance_date || '';
-            document.getElementById('item-next-maintenance').value = item.next_maintenance_date || '';
-            document.getElementById('item-maintenance-notes').value = item.maintenance_notes || '';
-            toggleMaintenanceFields();
+        // Wartungspläne laden
+        if (typeof loadItemSchedules === 'function') {
+            loadItemSchedules(item.id);
         }
     } else {
         document.getElementById('item-modal-title').textContent = 'Neuer Artikel';
@@ -865,11 +834,9 @@ function openItemModal(id = null) {
         document.getElementById('current-image-container').style.display = 'none';
         document.getElementById('image-preview-container').style.display = 'none';
 
-        // Wartungsfelder zurücksetzen
-        const requiresMaintenance = document.getElementById('item-requires-maintenance');
-        if (requiresMaintenance) {
-            requiresMaintenance.checked = false;
-            toggleMaintenanceFields();
+        // Wartungspläne zurücksetzen
+        if (typeof loadItemSchedules === 'function') {
+            loadItemSchedules(null);
         }
     }
     openModal('item-modal');
@@ -895,13 +862,7 @@ async function saveItem(event) {
         min_quantity: parseInt(document.getElementById('item-min-quantity').value),
         price: parseFloat(document.getElementById('item-price').value),
         supplier: document.getElementById('item-supplier').value,
-        notes: document.getElementById('item-notes').value,
-        // Wartungsfelder
-        requires_maintenance: document.getElementById('item-requires-maintenance')?.checked || false,
-        maintenance_interval_days: document.getElementById('item-maintenance-interval')?.value || null,
-        last_maintenance_date: document.getElementById('item-last-maintenance')?.value || null,
-        next_maintenance_date: document.getElementById('item-next-maintenance')?.value || null,
-        maintenance_notes: document.getElementById('item-maintenance-notes')?.value || null
+        notes: document.getElementById('item-notes').value
     };
 
     try {

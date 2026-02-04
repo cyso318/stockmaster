@@ -204,13 +204,25 @@ class EmailService:
 
         items_html = ""
         for item in items:
-            next_date = item.get('next_maintenance_date', '-')
+            next_date = item.get('next_maintenance_date', item.get('next_date', '-'))
+            type_name = item.get('type_name', '-')
+            type_color = item.get('type_color', '#6366f1')
+            assigned_to = item.get('assigned_to', '')
+            priority = item.get('priority', 'normal')
+            priority_badge = ''
+            if priority == 'critical':
+                priority_badge = '<span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;">Kritisch</span>'
+            elif priority == 'high':
+                priority_badge = '<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;">Hoch</span>'
+
             items_html += f"""
             <tr style="border-bottom: 1px solid #e2e8f0;">
                 <td style="padding: 12px; font-weight: 500;">{item['name']}</td>
+                <td style="padding: 12px;"><span style="display:inline-block;background:{type_color}22;color:{type_color};padding:2px 8px;border-radius:4px;font-size:12px;">{type_name}</span></td>
                 <td style="padding: 12px; color: #f59e0b; font-weight: 600;">{next_date}</td>
-                <td style="padding: 12px; color: #64748b;">{item.get('maintenance_interval_days', '-')} Tage</td>
+                <td style="padding: 12px; color: #64748b;">{item.get('maintenance_interval_days', item.get('interval_days', '-'))} Tage</td>
                 <td style="padding: 12px;">{item.get('location_name', '-')}</td>
+                <td style="padding: 12px;">{assigned_to} {priority_badge}</td>
             </tr>
             """
 
@@ -222,24 +234,26 @@ class EmailService:
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #334155; margin: 0; padding: 0; background: #f8fafc;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="max-width: 700px; margin: 0 auto; padding: 20px;">
                 <div style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-                    <h1 style="color: white; margin: 0; font-size: 28px;">🔧 Wartungserinnerung</h1>
+                    <h1 style="color: white; margin: 0; font-size: 28px;">Wartungserinnerung</h1>
                     <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Wartungsarbeiten erforderlich</p>
                 </div>
 
                 <div style="background: white; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                     <p style="font-size: 16px; color: #475569; margin-bottom: 20px;">
-                        Die Wartung für <strong>{len(items)} Artikel</strong> ist fällig oder steht bevor:
+                        <strong>{len(items)} Wartung(en)</strong> sind fällig oder stehen bevor:
                     </p>
 
                     <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
                         <thead>
                             <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
                                 <th style="padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #64748b;">Artikel</th>
-                                <th style="padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #64748b;">Nächste Wartung</th>
+                                <th style="padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #64748b;">Typ</th>
+                                <th style="padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #64748b;">Fällig</th>
                                 <th style="padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #64748b;">Intervall</th>
                                 <th style="padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #64748b;">Standort</th>
+                                <th style="padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #64748b;">Zugewiesen</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -249,7 +263,7 @@ class EmailService:
 
                     <div style="margin-top: 30px; padding: 20px; background: #fee2e2; border-left: 4px solid #ef4444; border-radius: 6px;">
                         <p style="margin: 0; color: #991b1b; font-weight: 500;">
-                            ⚠️ <strong>Wichtig:</strong> Planen Sie die Wartungsarbeiten rechtzeitig ein, um Ausfälle zu vermeiden.
+                            <strong>Wichtig:</strong> Planen Sie die Wartungsarbeiten rechtzeitig ein, um Ausfälle zu vermeiden.
                         </p>
                     </div>
 
@@ -262,7 +276,7 @@ class EmailService:
 
                 <div style="margin-top: 20px; text-align: center; color: #94a3b8; font-size: 12px;">
                     <p>StockMaster - Intelligente Lagerverwaltung</p>
-                    <p>Automatische Benachrichtigung • {datetime.now().strftime('%d.%m.%Y %H:%M')}</p>
+                    <p>Automatische Benachrichtigung - {datetime.now().strftime('%d.%m.%Y %H:%M')}</p>
                 </div>
             </div>
         </body>
@@ -270,13 +284,15 @@ class EmailService:
         """
 
         text_body = f"""
-        WARTUNGSERINNERUNG - {len(items)} ARTIKEL
+        WARTUNGSERINNERUNG - {len(items)} WARTUNG(EN)
 
-        Die folgenden Artikel benötigen eine Wartung:
+        Die folgenden Wartungen sind fällig:
 
         """
         for item in items:
-            text_body += f"- {item['name']}: Nächste Wartung am {item.get('next_maintenance_date', '-')}\n"
+            next_date = item.get('next_maintenance_date', item.get('next_date', '-'))
+            type_name = item.get('type_name', '')
+            text_body += f"- {item['name']}{' (' + type_name + ')' if type_name else ''}: Fällig am {next_date}\n"
 
         text_body += f"\n\nStockMaster - {datetime.now().strftime('%d.%m.%Y %H:%M')}"
 

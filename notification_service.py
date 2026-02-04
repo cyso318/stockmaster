@@ -2,9 +2,8 @@
 Automatischer Benachrichtigungs-Service
 
 Überwacht das Lager und sendet automatische E-Mail-Benachrichtigungen:
-- Niedriger Bestand (täglich)
 - Wartungserinnerungen (täglich)
-- Backup-Status (bei jedem Backup)
+- Backup-Fehler (bei fehlgeschlagenem Backup)
 """
 
 import threading
@@ -35,14 +34,56 @@ class NotificationService:
         Args:
             db_path: Pfad zur Datenbank
             check_interval_hours: Prüfintervall in Stunden
-            notification_email: E-Mail-Adresse für Benachrichtigungen
+            notification_email: Fallback E-Mail-Adresse (aus .env)
         """
         self.db_path = db_path
         self.check_interval_hours = check_interval_hours
-        self.notification_email = notification_email or os.getenv('NOTIFICATION_EMAIL')
+        self.fallback_email = notification_email or os.getenv('NOTIFICATION_EMAIL')
         self.email_service = get_email_service()
         self.is_running = False
         self.thread = None
+
+    def get_notification_recipients(self, notification_type):
+        """
+        Holt alle Benutzer die für einen bestimmten Benachrichtigungstyp angemeldet sind.
+
+        Args:
+            notification_type: 'low_stock', 'maintenance' oder 'backup'
+
+        Returns:
+            Liste von E-Mail-Adressen
+        """
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+
+            column_map = {
+                'maintenance': 'notify_maintenance',
+                'backup': 'notify_backup'
+            }
+
+            column = column_map.get(notification_type)
+            if not column:
+                return [self.fallback_email] if self.fallback_email else []
+
+            cursor = conn.cursor()
+            cursor.execute(f'''
+                SELECT DISTINCT email FROM users
+                WHERE email IS NOT NULL AND email != '' AND {column} = 1
+            ''')
+
+            emails = [row['email'] for row in cursor.fetchall()]
+            conn.close()
+
+            # Fallback auf zentrale E-Mail wenn keine Benutzer-Emails vorhanden
+            if not emails and self.fallback_email:
+                return [self.fallback_email]
+
+            return emails
+
+        except Exception as e:
+            logger.error(f"Fehler beim Abrufen der Empfänger: {e}")
+            return [self.fallback_email] if self.fallback_email else []
 
     def start(self):
         """Startet den Benachrichtigungs-Service"""
@@ -50,12 +91,10 @@ class NotificationService:
             logger.warning("Benachrichtigungs-Service läuft bereits")
             return
 
-        if not self.notification_email:
-            logger.warning("Keine Benachrichtigungs-E-Mail konfiguriert - Service wird nicht gestartet")
-            return
-
         logger.info(f"Starte Benachrichtigungs-Service (Intervall: {self.check_interval_hours}h)")
-        logger.info(f"Benachrichtigungen gehen an: {self.notification_email}")
+        if self.fallback_email:
+            logger.info(f"Fallback-E-Mail: {self.fallback_email}")
+        logger.info("Benachrichtigungen werden an Benutzer mit hinterlegter E-Mail gesendet")
 
         # Erste Prüfung direkt beim Start
         self.check_and_notify()
@@ -91,55 +130,51 @@ class NotificationService:
                 logger.error(f"Fehler im Scheduler: {e}")
                 time.sleep(60)
 
-    def get_low_stock_items(self):
-        """Holt Artikel mit niedrigem Bestand"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-
-            cursor.execute('''
-                SELECT i.*,
-                       c.name as category_name,
-                       l.name as location_name
-                FROM items i
-                LEFT JOIN categories c ON i.category_id = c.id
-                LEFT JOIN locations l ON i.location_id = l.id
-                WHERE i.quantity <= i.min_quantity
-                ORDER BY i.quantity ASC
-            ''')
-
-            items = [dict(row) for row in cursor.fetchall()]
-            conn.close()
-
-            return items
-
-        except Exception as e:
-            logger.error(f"Fehler beim Abrufen von Artikeln mit niedrigem Bestand: {e}")
-            return []
-
     def get_maintenance_due_items(self):
-        """Holt Artikel mit fälliger Wartung"""
+        """Holt Wartungen die fällig sind (aus item_maintenance_schedules)"""
         try:
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
-            # Artikel, deren Wartung in den nächsten 7 Tagen fällig ist
+            # Wartungen, die in den nächsten 7 Tagen fällig sind
             future_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
 
-            cursor.execute('''
-                SELECT i.*,
-                       c.name as category_name,
-                       l.name as location_name
-                FROM items i
-                LEFT JOIN categories c ON i.category_id = c.id
-                LEFT JOIN locations l ON i.location_id = l.id
-                WHERE i.requires_maintenance = 1
-                  AND i.next_maintenance_date IS NOT NULL
-                  AND i.next_maintenance_date <= ?
-                ORDER BY i.next_maintenance_date ASC
-            ''', (future_date,))
+            # Versuche zuerst die neue Tabelle
+            try:
+                cursor.execute('''
+                    SELECT ims.id as schedule_id, ims.interval_days, ims.next_date,
+                           ims.priority,
+                           i.name, i.sku,
+                           mt.name as type_name, mt.color as type_color,
+                           c.name as category_name,
+                           l.name as location_name,
+                           u.username as assigned_to,
+                           ims.next_date as next_maintenance_date,
+                           ims.interval_days as maintenance_interval_days
+                    FROM item_maintenance_schedules ims
+                    JOIN items i ON ims.item_id = i.id
+                    JOIN maintenance_types mt ON ims.maintenance_type_id = mt.id
+                    LEFT JOIN categories c ON i.category_id = c.id
+                    LEFT JOIN locations l ON i.location_id = l.id
+                    LEFT JOIN users u ON ims.assigned_user_id = u.id
+                    WHERE ims.is_active = 1
+                      AND ims.next_date IS NOT NULL
+                      AND ims.next_date <= ?
+                    ORDER BY ims.next_date ASC
+                ''', (future_date,))
+            except Exception:
+                # Fallback auf alte Tabelle falls Migration noch nicht gelaufen
+                cursor.execute('''
+                    SELECT i.*, c.name as category_name, l.name as location_name
+                    FROM items i
+                    LEFT JOIN categories c ON i.category_id = c.id
+                    LEFT JOIN locations l ON i.location_id = l.id
+                    WHERE i.requires_maintenance = 1
+                      AND i.next_maintenance_date IS NOT NULL
+                      AND i.next_maintenance_date <= ?
+                    ORDER BY i.next_maintenance_date ASC
+                ''', (future_date,))
 
             items = [dict(row) for row in cursor.fetchall()]
             conn.close()
@@ -151,45 +186,43 @@ class NotificationService:
             return []
 
     def check_and_notify(self):
-        """Prüft Lagerbestand und Wartungen, sendet Benachrichtigungen"""
+        """Prüft Wartungen und sendet Benachrichtigungen an alle aktivierten Benutzer"""
         logger.info("Starte automatische Benachrichtigungsprüfung...")
 
         notifications_sent = 0
 
-        # 1. Niedriger Bestand prüfen
-        low_stock_items = self.get_low_stock_items()
-        if low_stock_items:
-            logger.info(f"Gefunden: {len(low_stock_items)} Artikel mit niedrigem Bestand")
-            if self.email_service.send_low_stock_alert(self.notification_email, low_stock_items):
-                notifications_sent += 1
-                logger.info(f"✓ E-Mail für niedrigen Bestand gesendet ({len(low_stock_items)} Artikel)")
-        else:
-            logger.info("✓ Kein Artikel mit niedrigem Bestand gefunden")
-
-        # 2. Wartungen prüfen
+        # Wartungen prüfen
         maintenance_items = self.get_maintenance_due_items()
         if maintenance_items:
-            logger.info(f"Gefunden: {len(maintenance_items)} Artikel mit fälliger Wartung")
-            if self.email_service.send_maintenance_reminder(self.notification_email, maintenance_items):
-                notifications_sent += 1
-                logger.info(f"✓ Wartungserinnerung gesendet ({len(maintenance_items)} Artikel)")
+            recipients = self.get_notification_recipients('maintenance')
+            logger.info(f"Gefunden: {len(maintenance_items)} Artikel mit fälliger Wartung, {len(recipients)} Empfänger")
+            for email in recipients:
+                if self.email_service.send_maintenance_reminder(email, maintenance_items):
+                    notifications_sent += 1
+                    logger.info(f"✓ Wartungserinnerung gesendet an {email}")
         else:
             logger.info("✓ Keine fälligen Wartungen gefunden")
 
         logger.info(f"Benachrichtigungsprüfung abgeschlossen - {notifications_sent} E-Mail(s) gesendet")
 
     def notify_backup_status(self, success: bool, filename: str = None, error: str = None):
-        """Sendet Backup-Benachrichtigung"""
-        if not self.notification_email:
+        """Sendet Backup-Fehler-Benachrichtigung an alle aktivierten Benutzer (nur bei Fehler)"""
+        if success:
+            logger.info("Backup erfolgreich - keine Fehler-Benachrichtigung nötig")
             return
 
-        logger.info(f"Sende Backup-Benachrichtigung (Erfolg: {success})...")
-        self.email_service.send_backup_notification(
-            self.notification_email,
-            success,
-            filename,
-            error
-        )
+        recipients = self.get_notification_recipients('backup')
+        if not recipients:
+            return
+
+        logger.info(f"Sende Backup-Fehler-Benachrichtigung an {len(recipients)} Empfänger...")
+        for email in recipients:
+            self.email_service.send_backup_notification(
+                email,
+                success,
+                filename,
+                error
+            )
 
 
 # Globale Service-Instanz
