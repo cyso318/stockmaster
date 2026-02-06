@@ -2,7 +2,9 @@
 let categories = [];
 let locations = [];
 let items = [];
+let groups = [];
 let currentFilter = {};
+let collapsedGroups = new Set(JSON.parse(localStorage.getItem('collapsedGroups') || '[]'));
 
 // ============= INITIALISIERUNG =============
 
@@ -537,10 +539,51 @@ async function loadItems(filters = {}) {
     try {
         const params = new URLSearchParams(filters);
         items = await apiCall(`/api/items?${params}`);
+        groups = items.filter(i => i.is_group);
+        updateGroupSelects();
         renderItems();
     } catch (error) {
         console.error('Items load error:', error);
     }
+}
+
+function updateGroupSelects() {
+    const selects = ['item-group', 'filter-group'];
+    selects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">-- Keine Gruppe --</option>';
+        groups.forEach(g => {
+            select.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+        });
+        if (currentValue) select.value = currentValue;
+    });
+}
+
+function toggleGroup(groupId) {
+    if (collapsedGroups.has(groupId)) {
+        collapsedGroups.delete(groupId);
+    } else {
+        collapsedGroups.add(groupId);
+    }
+    localStorage.setItem('collapsedGroups', JSON.stringify([...collapsedGroups]));
+    renderItems();
+}
+
+function toggleGroupFields() {
+    const isGroup = document.getElementById('item-is-group').checked;
+    const groupSelectContainer = document.getElementById('group-select-container');
+    if (groupSelectContainer) {
+        groupSelectContainer.style.display = isGroup ? 'none' : '';
+    }
+}
+
+function openGroupModal() {
+    openItemModal();
+    document.getElementById('item-is-group').checked = true;
+    toggleGroupFields();
+    document.getElementById('item-modal-title').textContent = 'Neue Gruppe / Container';
 }
 
 // View Mode (Karten oder Tabelle)
@@ -590,26 +633,93 @@ function renderItems() {
         return;
     }
 
+    // Prüfen ob Suche aktiv ist - dann flach anzeigen
+    const searchEl = document.getElementById('search-items');
+    const isSearchActive = searchEl && searchEl.value.trim().length > 0;
+
+    // Items in Gruppen organisieren (nur wenn keine Suche aktiv)
+    let renderList = [];
+    if (!isSearchActive) {
+        const groupItems = items.filter(i => i.is_group);
+        const ungroupedItems = items.filter(i => !i.is_group && !i.group_id);
+        const groupedChildren = {};
+        items.forEach(i => {
+            if (i.group_id) {
+                if (!groupedChildren[i.group_id]) groupedChildren[i.group_id] = [];
+                groupedChildren[i.group_id].push(i);
+            }
+        });
+
+        groupItems.forEach(group => {
+            const children = groupedChildren[group.id] || [];
+            renderList.push({ type: 'group-header', item: group, childCount: children.length });
+            if (!collapsedGroups.has(group.id)) {
+                children.forEach(child => {
+                    renderList.push({ type: 'group-child', item: child });
+                });
+            }
+        });
+        ungroupedItems.forEach(item => {
+            renderList.push({ type: 'standalone', item: item });
+        });
+    } else {
+        // Flache Anzeige bei Suche (Gruppen-Items ausblenden)
+        items.filter(i => !i.is_group).forEach(item => {
+            renderList.push({ type: 'standalone', item: item });
+        });
+    }
+
     // Karten-Ansicht
     if (itemsViewMode === 'cards') {
         let html = '<div class="items-grid">';
 
-        items.forEach(item => {
+        renderList.forEach(entry => {
+            if (entry.type === 'group-header') {
+                const isCollapsed = collapsedGroups.has(entry.item.id);
+                html += `
+                    <div class="group-header-card" onclick="toggleGroup(${entry.item.id})">
+                        <div class="group-header-content">
+                            <span class="group-toggle-icon">${isCollapsed ? '&#9654;' : '&#9660;'}</span>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                <line x1="12" y1="22.08" x2="12" y2="12"/>
+                            </svg>
+                            <span class="group-name">${entry.item.name}</span>
+                            <span class="group-count">${entry.childCount} Artikel</span>
+                            ${entry.item.location_name ? `<span class="group-location">${entry.item.location_name}</span>` : ''}
+                        </div>
+                        <div class="group-actions" onclick="event.stopPropagation();">
+                            <button class="btn btn-icon" onclick="showQRCode(${entry.item.id})" style="background: #17a2b8; color: white;" title="Barcode">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                </svg>
+                            </button>
+                            <button class="btn btn-icon btn-secondary" onclick="editItem(${entry.item.id})" title="Bearbeiten">&#9998;</button>
+                            <button class="btn btn-icon btn-danger" onclick="deleteItem(${entry.item.id})" title="Loeschen">&#128465;</button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const item = entry.item;
+            const isChild = entry.type === 'group-child';
             const stockClass = item.quantity === 0 ? 'stock-out' :
                               item.quantity <= item.min_quantity ? 'stock-low' : 'stock-ok';
 
             const stockIcon = item.quantity === 0 ? '0' :
-                             item.quantity <= item.min_quantity ? '!' : '✓';
+                             item.quantity <= item.min_quantity ? '!' : '&#10003;';
 
-            const stockText = item.quantity === 0 ? 'Nicht verfügbar' :
+            const stockText = item.quantity === 0 ? 'Nicht verfuegbar' :
                              item.quantity <= item.min_quantity ? 'Niedriger Bestand' : 'Auf Lager';
 
             const imageHtml = item.image_path
                 ? `<img src="/static/uploads/items/${item.image_path}" alt="${item.name}">`
-                : `<div class="item-card-image-placeholder">📦</div>`;
+                : `<div class="item-card-image-placeholder">&#128230;</div>`;
 
             html += `
-                <div class="item-card">
+                <div class="item-card ${isChild ? 'group-child-card' : ''}">
                     <div class="item-card-image">
                         ${imageHtml}
                         ${item.sku ? `<div class="item-card-badge">${item.sku}</div>` : ''}
@@ -620,7 +730,7 @@ function renderItems() {
                                 <div class="item-card-title">${item.name}</div>
                                 ${item.sku ? `<div class="item-card-sku">${item.sku}</div>` : ''}
                             </div>
-                            <div class="item-card-price">${item.price.toFixed(2)} €</div>
+                            <div class="item-card-price">${item.price.toFixed(2)} &euro;</div>
                         </div>
 
                         <div class="item-card-info">
@@ -647,6 +757,19 @@ function renderItems() {
                                     <span class="item-card-info-value">${item.location_name}</span>
                                 </div>
                             ` : ''}
+                            ${item.group_name ? `
+                                <div class="item-card-info-row">
+                                    <span class="item-card-info-label">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                            <line x1="12" y1="22.08" x2="12" y2="12"/>
+                                        </svg>
+                                        Gruppe
+                                    </span>
+                                    <span class="item-card-info-value">${item.group_name}</span>
+                                </div>
+                            ` : ''}
                         </div>
 
                         <div class="item-card-stock ${stockClass}">
@@ -661,14 +784,14 @@ function renderItems() {
 
                         <div class="item-card-actions">
                             <button class="btn btn-icon btn-success" onclick="openMovementModal(${item.id}, 'in')" title="Einbuchen">+</button>
-                            <button class="btn btn-icon btn-danger" onclick="openMovementModal(${item.id}, 'out')" title="Ausbuchen">−</button>
+                            <button class="btn btn-icon btn-danger" onclick="openMovementModal(${item.id}, 'out')" title="Ausbuchen">&minus;</button>
                             <button class="btn btn-icon" onclick="showQRCode(${item.id})" style="background: #17a2b8; color: white;" title="Barcode">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="3" y="3" width="18" height="18" rx="2"/>
                                 </svg>
                             </button>
-                            <button class="btn btn-icon btn-secondary" onclick="editItem(${item.id})" title="Bearbeiten">✎</button>
-                            <button class="btn btn-icon btn-danger" onclick="deleteItem(${item.id})" title="Löschen">🗑</button>
+                            <button class="btn btn-icon btn-secondary" onclick="editItem(${item.id})" title="Bearbeiten">&#9998;</button>
+                            <button class="btn btn-icon btn-danger" onclick="deleteItem(${item.id})" title="Loeschen">&#128465;</button>
                         </div>
                     </div>
                 </div>
@@ -693,12 +816,52 @@ function renderItems() {
                 </div>
         `;
 
-        items.forEach(item => {
+        renderList.forEach(entry => {
+            if (entry.type === 'group-header') {
+                const isCollapsed = collapsedGroups.has(entry.item.id);
+                html += `
+                    <div class="table-row group-row" onclick="toggleGroup(${entry.item.id})">
+                        <div class="table-cell" style="width: 80px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                <line x1="12" y1="22.08" x2="12" y2="12"/>
+                            </svg>
+                        </div>
+                        <div class="table-cell" style="flex: 2; min-width: 200px;">
+                            <span class="group-toggle-icon">${isCollapsed ? '&#9654;' : '&#9660;'}</span>
+                            <strong style="margin-left: 6px;">${entry.item.name}</strong>
+                            <span class="group-count-badge">${entry.childCount} Artikel</span>
+                        </div>
+                        <div class="table-cell" style="width: 140px;">
+                            ${entry.item.category_name || '<span class="text-muted">-</span>'}
+                        </div>
+                        <div class="table-cell" style="width: 140px;">
+                            ${entry.item.location_name || '<span class="text-muted">-</span>'}
+                        </div>
+                        <div class="table-cell" style="width: 120px; text-align: center;">
+                            <span class="text-muted">-</span>
+                        </div>
+                        <div class="table-cell" style="width: 100px; text-align: right;">
+                            <span class="text-muted">-</span>
+                        </div>
+                        <div class="table-cell table-actions" style="width: 200px;" onclick="event.stopPropagation();">
+                            <button class="btn-table-action btn-info" onclick="showQRCode(${entry.item.id})" title="Barcode anzeigen">&#8865;</button>
+                            <button class="btn-table-action btn-edit" onclick="editItem(${entry.item.id})" title="Bearbeiten">&#9998;</button>
+                            <button class="btn-table-action btn-delete" onclick="deleteItem(${entry.item.id})" title="Loeschen">&#128465;</button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const item = entry.item;
+            const isChild = entry.type === 'group-child';
             const stockClass = item.quantity === 0 ? 'badge-danger' :
                               item.quantity <= item.min_quantity ? 'badge-warning' : 'badge-success';
 
-            const stockIcon = item.quantity === 0 ? '✕' :
-                             item.quantity <= item.min_quantity ? '⚠' : '✓';
+            const stockIcon = item.quantity === 0 ? '&#10005;' :
+                             item.quantity <= item.min_quantity ? '&#9888;' : '&#10003;';
 
             const imageHtml = item.image_path
                 ? `<img src="/static/uploads/items/${item.image_path}" alt="${item.name}" class="table-item-image">`
@@ -709,7 +872,7 @@ function renderItems() {
                    </div>`;
 
             html += `
-                <div class="table-row" onclick="editItem(${item.id})">
+                <div class="table-row ${isChild ? 'group-child-row' : ''}" onclick="editItem(${item.id})">
                     <div class="table-cell" style="width: 80px;">
                         ${imageHtml}
                     </div>
@@ -747,14 +910,14 @@ function renderItems() {
                         ${item.min_quantity ? `<div class="stock-min">Min: ${item.min_quantity}</div>` : ''}
                     </div>
                     <div class="table-cell" style="width: 100px; text-align: right;">
-                        <div class="item-price">${item.price.toFixed(2)} €</div>
+                        <div class="item-price">${item.price.toFixed(2)} &euro;</div>
                     </div>
                     <div class="table-cell table-actions" style="width: 200px;" onclick="event.stopPropagation();">
                         <button class="btn-table-action btn-success" onclick="openMovementModal(${item.id}, 'in')" title="Einbuchen">+</button>
-                        <button class="btn-table-action btn-danger" onclick="openMovementModal(${item.id}, 'out')" title="Ausbuchen">−</button>
-                        <button class="btn-table-action btn-info" onclick="showQRCode(${item.id})" title="Barcode anzeigen">⊡</button>
-                        <button class="btn-table-action btn-edit" onclick="editItem(${item.id})" title="Bearbeiten">✎</button>
-                        <button class="btn-table-action btn-delete" onclick="deleteItem(${item.id})" title="Löschen">🗑</button>
+                        <button class="btn-table-action btn-danger" onclick="openMovementModal(${item.id}, 'out')" title="Ausbuchen">&minus;</button>
+                        <button class="btn-table-action btn-info" onclick="showQRCode(${item.id})" title="Barcode anzeigen">&#8865;</button>
+                        <button class="btn-table-action btn-edit" onclick="editItem(${item.id})" title="Bearbeiten">&#9998;</button>
+                        <button class="btn-table-action btn-delete" onclick="deleteItem(${item.id})" title="Loeschen">&#128465;</button>
                     </div>
                 </div>
             `;
@@ -767,20 +930,24 @@ function renderItems() {
 
 function searchItems(filterType = null) {
     const filters = {};
-    
+
     const search = document.getElementById('search-items').value;
     if (search) filters.search = search;
-    
+
     const category = document.getElementById('filter-category').value;
     if (category) filters.category = category;
-    
+
     const location = document.getElementById('filter-location').value;
     if (location) filters.location = location;
-    
+
+    const groupEl = document.getElementById('filter-group');
+    const group = groupEl ? groupEl.value : '';
+    if (group) filters.group = group;
+
     if (filterType === 'low_stock') {
         filters.low_stock = '1';
     }
-    
+
     loadItems(filters);
 }
 
@@ -819,6 +986,13 @@ function openItemModal(id = null) {
         document.getElementById('image-preview-container').style.display = 'none';
         document.getElementById('item-image-upload').value = '';
 
+        // Gruppen-Felder setzen
+        const isGroupEl = document.getElementById('item-is-group');
+        const groupEl = document.getElementById('item-group');
+        if (isGroupEl) isGroupEl.checked = !!item.is_group;
+        if (groupEl) groupEl.value = item.group_id || '';
+        toggleGroupFields();
+
         // Wartungspläne laden
         if (typeof loadItemSchedules === 'function') {
             loadItemSchedules(item.id);
@@ -828,6 +1002,13 @@ function openItemModal(id = null) {
         document.getElementById('item-form').reset();
         document.getElementById('item-id').value = '';
         document.getElementById('item-unit').value = 'Stück';
+
+        // Gruppen-Felder zurücksetzen
+        const isGroupEl = document.getElementById('item-is-group');
+        const groupEl = document.getElementById('item-group');
+        if (isGroupEl) isGroupEl.checked = false;
+        if (groupEl) groupEl.value = '';
+        toggleGroupFields();
 
         // Bild-Sektion verstecken für neue Artikel
         document.getElementById('image-section').style.display = 'none';
@@ -850,6 +1031,8 @@ async function saveItem(event) {
     event.preventDefault();
 
     const id = document.getElementById('item-id').value;
+    const isGroupEl = document.getElementById('item-is-group');
+    const groupEl = document.getElementById('item-group');
     const data = {
         sku: document.getElementById('item-sku').value,
         name: document.getElementById('item-name').value,
@@ -862,7 +1045,9 @@ async function saveItem(event) {
         min_quantity: parseInt(document.getElementById('item-min-quantity').value),
         price: parseFloat(document.getElementById('item-price').value),
         supplier: document.getElementById('item-supplier').value,
-        notes: document.getElementById('item-notes').value
+        notes: document.getElementById('item-notes').value,
+        is_group: isGroupEl ? isGroupEl.checked : false,
+        group_id: groupEl ? (groupEl.value || null) : null
     };
 
     try {
@@ -1050,16 +1235,24 @@ async function showQRCode(itemId) {
         const result = await apiCall(`/api/items/${itemId}/barcode-base64`);
 
         if (result.success) {
+            // Finde das Item für Kategorie-Anzeige
+            const item = items.find(i => i.id === itemId);
+            const categoryHtml = item && item.category_name
+                ? `<div style="color: #6366f1; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; font-size: 13px; margin-bottom: 8px;">${item.category_name}</div>`
+                : '';
+            const itemName = item ? item.name : 'Artikel';
+
             // Modal für Barcode erstellen
             const modal = document.createElement('div');
             modal.className = 'modal active';
             modal.innerHTML = `
                 <div class="modal-content" style="max-width: 500px;">
                     <div class="modal-header">
-                        <h3>Barcode für Artikel</h3>
+                        <h3>Barcode für ${itemName}</h3>
                         <span class="close" onclick="this.parentElement.parentElement.parentElement.remove()">&times;</span>
                     </div>
                     <div style="text-align: center; padding: 20px;">
+                        ${categoryHtml}
                         <img src="${result.barcode}" style="width: 100%; max-width: 400px; height: auto; margin: 20px auto; display: block;">
                         <p style="margin: 20px 0; color: #666;">Scannen Sie diesen Barcode mit einem Scanner</p>
                         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">

@@ -177,6 +177,17 @@
             page-break-inside: avoid;
         }
 
+        .format-avery-3478 .label .category {
+            font-size: 7pt;
+            color: #6366f1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1mm;
+            font-weight: 600;
+            text-align: center;
+            width: 100%;
+        }
+
         .format-avery-3478 .label .name {
             font-size: 9pt;
             font-weight: bold;
@@ -219,6 +230,17 @@
             align-items: center;
             justify-content: center;
             page-break-inside: avoid;
+        }
+
+        .format-avery-3427 .label .category {
+            font-size: 6pt;
+            color: #6366f1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5mm;
+            font-weight: 600;
+            text-align: center;
+            width: 100%;
         }
 
         .format-avery-3427 .label .name {
@@ -269,6 +291,16 @@
             width: 20mm;
         }
 
+        .format-dymo-54x25 .label .category {
+            font-size: 5pt;
+            color: #6366f1;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 0.5mm;
+            font-weight: 600;
+            text-align: left;
+        }
+
         .format-dymo-54x25 .label .name {
             font-size: 7pt;
             font-weight: bold;
@@ -307,6 +339,17 @@
             justify-content: center;
             background: white;
             page-break-inside: avoid;
+        }
+
+        .format-brother-62 .label .category {
+            font-size: 8pt;
+            color: #6366f1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2mm;
+            font-weight: 600;
+            text-align: center;
+            width: 100%;
         }
 
         .format-brother-62 .label .name {
@@ -351,6 +394,17 @@
             align-items: center;
             justify-content: center;
             page-break-after: always;
+        }
+
+        .format-a4-full .label .category {
+            font-size: 18pt;
+            color: #6366f1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5mm;
+            font-weight: 600;
+            text-align: center;
+            width: 100%;
         }
 
         .format-a4-full .label .name {
@@ -489,13 +543,11 @@
         <div class="labels">
             {% for item in items %}
             <div class="label">
+                {% if item.category_name %}<div class="category">{{ item.category_name }}</div>{% endif %}
                 <div class="name">{{ item.name }}</div>
                 {% if item.sku %}<div class="sku">SKU: {{ item.sku }}</div>{% endif %}
                 <img src="{{ item.barcode }}" alt="Barcode {{ item.name }}" class="barcode-img">
-                <div class="details">
-                    {% if item.category_name %}{{ item.category_name }}{% endif %}
-                    {% if item.location_name %} | {{ item.location_name }}{% endif %}
-                </div>
+                {% if item.location_name %}<div class="details">{{ item.location_name }}</div>{% endif %}
             </div>
             {% endfor %}
         </div>

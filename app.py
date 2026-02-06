@@ -294,6 +294,19 @@ def init_db():
     except:
         pass  # Spalte existiert bereits
 
+    # Migration: Gruppen-Felder hinzufügen
+    try:
+        c.execute("ALTER TABLE items ADD COLUMN is_group BOOLEAN DEFAULT 0")
+        print("✓ Gruppen-Feld (is_group) zur Items-Tabelle hinzugefügt")
+    except:
+        pass  # Spalte existiert bereits
+
+    try:
+        c.execute("ALTER TABLE items ADD COLUMN group_id INTEGER REFERENCES items(id)")
+        print("✓ Gruppen-Zuordnung (group_id) zur Items-Tabelle hinzugefügt")
+    except:
+        pass  # Spalte existiert bereits
+
     # Bewegungen Tabelle (Ein-/Ausbuchungen)
     c.execute('''CREATE TABLE IF NOT EXISTS movements
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1763,13 +1776,32 @@ def items():
         if barcode == '' or barcode is None:
             barcode = None
 
+        # Gruppen-Felder
+        is_group = bool(data.get('is_group', False))
+        group_id = data.get('group_id') or None
+        if group_id:
+            group_id = int(group_id)
+
+        # Gruppen-Validierung
+        if is_group and group_id:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Gruppen können nicht in andere Gruppen verschachtelt werden'}), 400
+
+        if group_id:
+            group_item = conn.execute(
+                'SELECT id, is_group, organization_id FROM items WHERE id = ?', (group_id,)
+            ).fetchone()
+            if not group_item or not group_item['is_group'] or group_item['organization_id'] != organization_id:
+                conn.close()
+                return jsonify({'success': False, 'message': 'Ungültige Gruppe'}), 400
+
         try:
             cursor = conn.execute('''INSERT INTO items
                 (organization_id, sku, name, barcode, description, category_id, location_id, quantity,
                  min_quantity, unit, price, supplier, notes,
                  requires_maintenance, maintenance_interval_days, last_maintenance_date,
-                 next_maintenance_date, maintenance_notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                 next_maintenance_date, maintenance_notes, is_group, group_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                 (organization_id, sku, name, barcode,
                  sanitize_string(data.get('description'), 1000),
                  data.get('category_id') or None, data.get('location_id') or None,
@@ -1781,7 +1813,8 @@ def items():
                  maintenance_interval_days,
                  last_maintenance_date,
                  next_maintenance_date,
-                 maintenance_notes))
+                 maintenance_notes,
+                 is_group, group_id))
             conn.commit()
             return jsonify({'success': True, 'message': 'Artikel erstellt', 'id': cursor.lastrowid})
         except sqlite3.IntegrityError as e:
@@ -1797,11 +1830,14 @@ def items():
     category = request.args.get('category')
     location = request.args.get('location')
     low_stock = request.args.get('low_stock')
+    group_filter = request.args.get('group')
 
-    query = '''SELECT i.*, c.name as category_name, l.name as location_name
+    query = '''SELECT i.*, c.name as category_name, l.name as location_name,
+                      g.name as group_name
                FROM items i
                LEFT JOIN categories c ON i.category_id = c.id
                LEFT JOIN locations l ON i.location_id = l.id
+               LEFT JOIN items g ON i.group_id = g.id
                WHERE i.organization_id = ?'''
     params = [organization_id]
 
@@ -1821,7 +1857,11 @@ def items():
     if low_stock:
         query += ' AND i.quantity <= i.min_quantity'
 
-    query += ' ORDER BY i.name'
+    if group_filter:
+        query += ' AND i.group_id = ?'
+        params.append(group_filter)
+
+    query += ' ORDER BY i.is_group DESC, i.name'
 
     items = conn.execute(query, params).fetchall()
     conn.close()
@@ -1836,6 +1876,15 @@ def item(id):
         organization_id = session.get('organization_id')
 
         if request.method == 'DELETE':
+            # Prüfen ob Gruppe noch Kinder hat
+            children_count = conn.execute(
+                'SELECT COUNT(*) as count FROM items WHERE group_id = ? AND organization_id = ?',
+                (id, organization_id)
+            ).fetchone()['count']
+            if children_count > 0:
+                conn.close()
+                return jsonify({'success': False, 'message': f'Gruppe enthält noch {children_count} Artikel. Bitte erst Artikel entfernen.'}), 400
+
             conn.execute('DELETE FROM items WHERE id = ? AND organization_id = ?', (id, organization_id))
             conn.commit()
             conn.close()
@@ -1849,11 +1898,42 @@ def item(id):
             if barcode == '' or barcode is None:
                 barcode = None
 
+            # Gruppen-Felder
+            is_group = bool(data.get('is_group', False))
+            group_id = data.get('group_id') or None
+            if group_id:
+                group_id = int(group_id)
+
+            # Gruppen können nicht verschachtelt werden
+            if is_group and group_id:
+                conn.close()
+                return jsonify({'success': False, 'message': 'Gruppen können nicht in andere Gruppen verschachtelt werden'}), 400
+
+            # group_id validieren
+            if group_id:
+                group_item = conn.execute(
+                    'SELECT id, is_group, organization_id FROM items WHERE id = ?', (group_id,)
+                ).fetchone()
+                if not group_item or not group_item['is_group'] or group_item['organization_id'] != organization_id:
+                    conn.close()
+                    return jsonify({'success': False, 'message': 'Ungültige Gruppe'}), 400
+
+            # Wenn Gruppen-Status entfernt wird, prüfen ob noch Kinder vorhanden
+            if not is_group:
+                children_count = conn.execute(
+                    'SELECT COUNT(*) as count FROM items WHERE group_id = ? AND organization_id = ?',
+                    (id, organization_id)
+                ).fetchone()['count']
+                if children_count > 0:
+                    conn.close()
+                    return jsonify({'success': False, 'message': f'Diese Gruppe enthält noch {children_count} Artikel. Bitte erst Artikel entfernen.'}), 400
+
             conn.execute('''UPDATE items SET
                 sku = ?, name = ?, barcode = ?, description = ?, category_id = ?, location_id = ?,
                 quantity = ?, min_quantity = ?, unit = ?, price = ?, supplier = ?,
                 notes = ?, requires_maintenance = ?, maintenance_interval_days = ?,
                 last_maintenance_date = ?, next_maintenance_date = ?, maintenance_notes = ?,
+                is_group = ?, group_id = ?,
                 updated_at = CURRENT_TIMESTAMP
                 WHERE id = ? AND organization_id = ?''',
                 (data.get('sku'), data['name'], barcode, data.get('description'),
@@ -1865,15 +1945,19 @@ def item(id):
                  data.get('maintenance_interval_days'),
                  data.get('last_maintenance_date'),
                  data.get('next_maintenance_date'),
-                 data.get('maintenance_notes'), id, organization_id))
+                 data.get('maintenance_notes'),
+                 is_group, group_id,
+                 id, organization_id))
             conn.commit()
             conn.close()
             return jsonify({'success': True, 'message': 'Artikel aktualisiert'})
 
-        item = conn.execute('''SELECT i.*, c.name as category_name, l.name as location_name
+        item = conn.execute('''SELECT i.*, c.name as category_name, l.name as location_name,
+                                     g.name as group_name
                               FROM items i
                               LEFT JOIN categories c ON i.category_id = c.id
                               LEFT JOIN locations l ON i.location_id = l.id
+                              LEFT JOIN items g ON i.group_id = g.id
                               WHERE i.id = ? AND i.organization_id = ?''', (id, organization_id)).fetchone()
         conn.close()
         return jsonify(dict(item) if item else {})
