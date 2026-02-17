@@ -4077,9 +4077,12 @@ def debug_login():
     else:
         return redirect(url_for('debug_session_page'))
 
-if __name__ == '__main__':
-    init_db()
+# Ensure schema/migrations are applied in WSGI deployments too.
+# In production, app is often imported (not run via __main__), so this
+# must execute at import time to avoid SQL errors on newer routes.
+init_db()
 
+if __name__ == '__main__':
     # Systemcheck durchführen
     check_system_status()
 
