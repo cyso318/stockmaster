@@ -15,12 +15,12 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            background: #0b1120;
+            background: #09090b;
             background-image:
-                radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 20%, rgba(6, 182, 212, 0.06) 0%, transparent 50%);
+                radial-gradient(ellipse at 20% 50%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(29, 78, 216, 0.06) 0%, transparent 50%);
             background-attachment: fixed;
-            color: #f1f5f9;
+            color: #f4f4f5;
             min-height: 100vh;
         }
 
@@ -34,7 +34,7 @@
             background: rgba(15, 23, 42, 0.75);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            color: #f1f5f9;
+            color: #f4f4f5;
             padding: 0;
             margin-bottom: 30px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -62,7 +62,7 @@
         .brand h1 {
             font-size: 24px;
             font-weight: 700;
-            background: linear-gradient(135deg, #818cf8, #06b6d4);
+            background: linear-gradient(135deg, #a78bfa, #1d4ed8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -71,7 +71,7 @@
 
         .tagline {
             font-size: 13px;
-            color: #64748b;
+            color: #71717a;
             margin: 4px 0 0 0;
         }
 
@@ -80,7 +80,7 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #94a3b8;
+            color: #a1a1aa;
             padding: 10px 20px;
             border-radius: 10px;
             cursor: pointer;
@@ -90,14 +90,14 @@
         }
 
         .btn-header:hover {
-            background: rgba(51, 65, 85, 0.5);
-            color: #f1f5f9;
+            background: rgba(255, 255, 255, 0.05);
+            color: #f4f4f5;
             border-color: rgba(255, 255, 255, 0.15);
             transform: translateY(-1px);
         }
 
         .settings-section {
-            background: rgba(30, 41, 59, 0.65);
+            background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -110,14 +110,14 @@
         .settings-section h2 {
             font-size: 18px;
             margin-bottom: 20px;
-            color: #f1f5f9;
+            color: #f4f4f5;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
         .settings-section h2 svg {
-            color: #818cf8;
+            color: #a78bfa;
         }
 
         .setting-item {
@@ -144,13 +144,13 @@
         .setting-label {
             font-weight: 600;
             font-size: 15px;
-            color: #f1f5f9;
+            color: #f4f4f5;
             margin-bottom: 5px;
         }
 
         .setting-desc {
             font-size: 13px;
-            color: #64748b;
+            color: #71717a;
         }
 
         .setting-control {
@@ -171,9 +171,9 @@
         }
 
         .toggle-switch.active {
-            background: linear-gradient(135deg, #6366f1, #06b6d4);
+            background: linear-gradient(135deg, #7c3aed, #1d4ed8);
             border-color: transparent;
-            box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 0 12px rgba(124, 58, 237, 0.3);
         }
 
         .toggle-switch-handle {
@@ -182,7 +182,7 @@
             left: 3px;
             width: 22px;
             height: 22px;
-            background: #f1f5f9;
+            background: #f4f4f5;
             border-radius: 50%;
             transition: transform 0.3s;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -194,11 +194,11 @@
 
         select {
             padding: 10px 14px;
-            border: 1px solid rgba(148, 163, 184, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 10px;
             font-size: 14px;
-            background: rgba(15, 23, 42, 0.5);
-            color: #f1f5f9;
+            background: rgba(255, 255, 255, 0.04);
+            color: #f4f4f5;
             cursor: pointer;
             min-width: 150px;
             transition: all 0.3s;
@@ -206,13 +206,13 @@
 
         select:focus {
             outline: none;
-            border-color: #818cf8;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            border-color: #a78bfa;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
         }
 
         select option {
-            background: #1e293b;
-            color: #f1f5f9;
+            background: #18181b;
+            color: #f4f4f5;
         }
 
         .btn {
@@ -226,13 +226,13 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #6366f1, #06b6d4);
+            background: linear-gradient(135deg, #7c3aed, #1d4ed8);
             color: white;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
         }
 
         .btn-primary:hover {
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.35);
             transform: translateY(-1px);
             filter: brightness(1.08);
         }
@@ -240,18 +240,18 @@
         .btn-secondary {
             background: rgba(30, 41, 59, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #94a3b8;
+            color: #a1a1aa;
         }
 
         .btn-secondary:hover {
-            background: rgba(51, 65, 85, 0.5);
-            color: #f1f5f9;
+            background: rgba(255, 255, 255, 0.05);
+            color: #f4f4f5;
             border-color: rgba(255, 255, 255, 0.15);
         }
 
         .current-value {
             font-size: 13px;
-            color: #94a3b8;
+            color: #a1a1aa;
             padding: 6px 12px;
             background: rgba(15, 23, 42, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.06);

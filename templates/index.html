@@ -30,59 +30,59 @@
     <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
     <style>
         :root {
-            /* === GLASSMORPHISM DARK SLATE DESIGN === */
-            /* Primary Background */
-            --bg-primary: #0b1120;
-            --bg-secondary: #111827;
-            --bg-tertiary: #1e293b;
+            /* === PROJECTNEST-STYLE DESIGN === */
+            /* Primary Background — zinc-950 */
+            --bg-primary: #09090b;
+            --bg-secondary: #111113;
+            --bg-tertiary: #18181b;
 
-            /* Glass Effects */
-            --bg-card: rgba(30, 41, 59, 0.65);
-            --bg-glass: rgba(15, 23, 42, 0.6);
-            --bg-glass-heavy: rgba(15, 23, 42, 0.85);
-            --bg-modal: rgba(30, 41, 59, 0.88);
-            --bg-hover: rgba(51, 65, 85, 0.5);
-            --bg-input: rgba(15, 23, 42, 0.5);
+            /* Glass Effects — sehr subtil wie ProjectNest */
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --bg-glass: rgba(0, 0, 0, 0.40);
+            --bg-glass-heavy: rgba(0, 0, 0, 0.75);
+            --bg-modal: rgba(24, 24, 27, 0.92);
+            --bg-hover: rgba(255, 255, 255, 0.05);
+            --bg-input: rgba(255, 255, 255, 0.04);
 
-            /* Text */
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --text-tertiary: #64748b;
+            /* Text — zinc scale */
+            --text-primary: #f4f4f5;
+            --text-secondary: #a1a1aa;
+            --text-tertiary: #71717a;
 
-            /* Borders */
-            --border-color: rgba(148, 163, 184, 0.12);
-            --border-glass: rgba(255, 255, 255, 0.08);
-            --border-glass-hover: rgba(255, 255, 255, 0.15);
+            /* Borders — sehr subtil */
+            --border-color: rgba(255, 255, 255, 0.06);
+            --border-glass: rgba(255, 255, 255, 0.05);
+            --border-glass-hover: rgba(255, 255, 255, 0.10);
 
-            /* Accent Colors */
-            --primary: #818cf8;
-            --primary-dark: #6366f1;
+            /* Accent Colors — violet wie ProjectNest */
+            --primary: #a78bfa;
+            --primary-dark: #7c3aed;
             --secondary: #f472b6;
-            --accent: #06b6d4;
+            --accent: #1d4ed8;
             --success: #34d399;
             --success-dark: #10b981;
             --danger: #fb7185;
             --danger-dark: #f43f5e;
             --warning: #fbbf24;
             --warning-dark: #f59e0b;
-            --info: #38bdf8;
+            --info: #60a5fa;
 
-            /* Gradients */
-            --gradient-primary: linear-gradient(135deg, #6366f1, #06b6d4);
-            --gradient-accent: linear-gradient(135deg, #818cf8, #06b6d4);
+            /* Gradients — violet/blue wie ProjectNest */
+            --gradient-primary: linear-gradient(135deg, #7c3aed, #1d4ed8);
+            --gradient-accent: linear-gradient(135deg, #a78bfa, #60a5fa);
             --gradient-danger: linear-gradient(135deg, #f43f5e, #ec4899);
-            --gradient-success: linear-gradient(135deg, #10b981, #06b6d4);
+            --gradient-success: linear-gradient(135deg, #10b981, #059669);
             --gradient-warning: linear-gradient(135deg, #f59e0b, #f97316);
 
             /* Shadows */
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
-            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
-            --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.5);
-            --shadow-glow-primary: 0 0 20px rgba(99, 102, 241, 0.2);
-            --shadow-glow-accent: 0 0 20px rgba(6, 182, 212, 0.2);
+            --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 1px 1px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.3);
+            --shadow-lg: 0 4px 32px rgba(0, 0, 0, 0.5);
+            --shadow-xl: 0 8px 48px rgba(0, 0, 0, 0.6);
+            --shadow-glow-primary: 0 0 20px rgba(124, 58, 237, 0.35);
+            --shadow-glow-accent:  0 0 20px rgba(29, 78, 216, 0.25);
             --shadow-glow-success: 0 0 20px rgba(16, 185, 129, 0.2);
-            --shadow-glow-danger: 0 0 20px rgba(244, 63, 94, 0.2);
+            --shadow-glow-danger:  0 0 20px rgba(244, 63, 94, 0.2);
 
             /* Blur */
             --blur-sm: blur(8px);
@@ -96,6 +96,53 @@
             --radius-lg: 16px;
             --radius-xl: 20px;
             --radius-full: 9999px;
+        }
+
+        /* Animated background orbs — wie ProjectNest */
+        .bg-orb {
+            position: fixed;
+            border-radius: 9999px;
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .bg-orb-violet {
+            width: 600px; height: 600px;
+            background: #7c3aed;
+            opacity: 0.15;
+            top: -10%; left: -10%;
+            animation: orb-drift-1 22s ease-in-out infinite alternate;
+        }
+        .bg-orb-blue {
+            width: 600px; height: 600px;
+            background: #1d4ed8;
+            opacity: 0.12;
+            bottom: -15%; right: -10%;
+            animation: orb-drift-2 28s ease-in-out infinite alternate;
+        }
+        .bg-orb-mid {
+            width: 400px; height: 400px;
+            background: #6d28d9;
+            opacity: 0.07;
+            top: 40%; left: 55%;
+            animation: orb-drift-3 18s ease-in-out infinite alternate;
+        }
+        @keyframes orb-drift-1 {
+            0%   { transform: translate(0,0) scale(1); }
+            33%  { transform: translate(12vw,8vh) scale(1.1); }
+            66%  { transform: translate(5vw,18vh) scale(0.95); }
+            100% { transform: translate(18vw,5vh) scale(1.05); }
+        }
+        @keyframes orb-drift-2 {
+            0%   { transform: translate(0,0) scale(1); }
+            33%  { transform: translate(-10vw,-12vh) scale(1.15); }
+            66%  { transform: translate(-18vw,-5vh) scale(0.9); }
+            100% { transform: translate(-8vw,-15vh) scale(1.1); }
+        }
+        @keyframes orb-drift-3 {
+            0%   { transform: translate(0,0) scale(1); }
+            50%  { transform: translate(-15vw,10vh) scale(1.2); }
+            100% { transform: translate(8vw,-12vh) scale(0.85); }
         }
 
         /* ========================================
@@ -117,18 +164,29 @@
             color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
-            /* Subtle mesh gradient background */
-            background-image:
-                radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 20%, rgba(6, 182, 212, 0.06) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 80%, rgba(236, 72, 153, 0.05) 0%, transparent 50%);
-            background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
         }
+
+        /* Scrollbar — wie ProjectNest */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 9999px; }
+
+        /* Selection */
+        ::selection { background: rgba(139, 92, 246, 0.4); }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Haupt-Content über den Orbs */
+        header, main, .main-content, .modal, #cart-fab {
+            position: relative;
+            z-index: 1;
         }
 
         .resize-animation-stopper * {
@@ -149,15 +207,14 @@
            HEADER
            ======================================== */
         header {
-            background: var(--bg-glass);
+            background: rgba(0, 0, 0, 0.40);
             backdrop-filter: var(--blur-lg);
             -webkit-backdrop-filter: var(--blur-lg);
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--border-glass);
+            padding: 12px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: var(--shadow-md);
         }
 
         .header-content {
@@ -189,7 +246,7 @@
 
         .logo:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 28px rgba(99, 102, 241, 0.35);
+            box-shadow: 0 0 28px rgba(124, 58, 237, 0.5);
         }
 
         .brand h1 {
@@ -2218,6 +2275,11 @@
     </style>
 </head>
 <body>
+    <!-- Background Orbs — wie ProjectNest -->
+    <div class="bg-orb bg-orb-violet" aria-hidden="true"></div>
+    <div class="bg-orb bg-orb-blue" aria-hidden="true"></div>
+    <div class="bg-orb bg-orb-mid" aria-hidden="true"></div>
+
     <header>
         <div class="container">
             <div class="header-content">

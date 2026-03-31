@@ -13,18 +13,31 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            background: #0b1120;
-            background-image:
-                radial-gradient(ellipse at 30% 40%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
-                radial-gradient(ellipse at 70% 60%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 90%, rgba(236, 72, 153, 0.06) 0%, transparent 50%);
-            background-attachment: fixed;
+            background: #09090b;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            -webkit-font-smoothing: antialiased;
         }
+
+        ::selection { background: rgba(139, 92, 246, 0.4); }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 9999px; }
+
+        .bg-orb {
+            position: fixed; border-radius: 9999px; filter: blur(120px);
+            pointer-events: none; z-index: 0;
+        }
+        .bg-orb-violet { width:600px; height:600px; background:#7c3aed; opacity:0.15;
+            top:-10%; left:-10%; animation: orb1 22s ease-in-out infinite alternate; }
+        .bg-orb-blue   { width:600px; height:600px; background:#1d4ed8; opacity:0.12;
+            bottom:-15%; right:-10%; animation: orb2 28s ease-in-out infinite alternate; }
+        @keyframes orb1 { 0%{transform:translate(0,0)} 100%{transform:translate(18vw,5vh)} }
+        @keyframes orb2 { 0%{transform:translate(0,0)} 100%{transform:translate(-8vw,-15vh)} }
+
+        .login-wrap { position: relative; z-index: 1; width: 100%; display: flex; align-items: center; justify-content: center; }
 
         .login-container {
             background: rgba(30, 41, 59, 0.7);
@@ -39,9 +52,9 @@
         }
 
         .login-header {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(6, 182, 212, 0.2));
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(29, 78, 216, 0.2));
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            color: #f1f5f9;
+            color: #f4f4f5;
             padding: 40px 30px;
             text-align: center;
         }
@@ -49,13 +62,13 @@
         .logo {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, #6366f1, #06b6d4);
+            background: linear-gradient(135deg, #7c3aed, #1d4ed8);
             border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 20px;
-            box-shadow: 0 0 24px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 0 24px rgba(124, 58, 237, 0.3);
         }
 
         .logo svg {
@@ -67,7 +80,7 @@
             font-size: 28px;
             margin-bottom: 8px;
             font-weight: 700;
-            background: linear-gradient(135deg, #818cf8, #06b6d4);
+            background: linear-gradient(135deg, #a78bfa, #1d4ed8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -75,7 +88,7 @@
 
         .login-header p {
             font-size: 14px;
-            color: #94a3b8;
+            color: #a1a1aa;
         }
 
         .login-body {
@@ -90,29 +103,29 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
-            color: #94a3b8;
+            color: #a1a1aa;
             font-size: 14px;
         }
 
         .form-group input {
             width: 100%;
             padding: 14px 16px;
-            border: 1px solid rgba(148, 163, 184, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 12px;
             font-size: 15px;
             transition: all 0.3s;
-            background: rgba(15, 23, 42, 0.5);
-            color: #f1f5f9;
+            background: rgba(255, 255, 255, 0.04);
+            color: #f4f4f5;
         }
 
         .form-group input::placeholder {
-            color: #64748b;
+            color: #71717a;
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: #818cf8;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            border-color: #a78bfa;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
             background: rgba(15, 23, 42, 0.7);
         }
 
@@ -122,27 +135,27 @@
             align-items: center;
             margin-bottom: 24px;
             font-size: 14px;
-            color: #94a3b8;
+            color: #a1a1aa;
         }
 
         .remember-me {
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #94a3b8;
+            color: #a1a1aa;
         }
 
         .remember-me input[type="checkbox"] {
             width: 18px;
             height: 18px;
             cursor: pointer;
-            accent-color: #818cf8;
+            accent-color: #a78bfa;
         }
 
         .btn-login {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #6366f1, #06b6d4);
+            background: linear-gradient(135deg, #7c3aed, #1d4ed8);
             color: white;
             border: none;
             border-radius: 12px;
@@ -150,12 +163,12 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3);
         }
 
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 8px 24px rgba(124, 58, 237, 0.4);
             filter: brightness(1.08);
         }
 
@@ -190,25 +203,25 @@
 
         .info-box h3 {
             font-size: 14px;
-            color: #f1f5f9;
+            color: #f4f4f5;
             margin-bottom: 10px;
             font-weight: 600;
         }
 
         .info-box p {
             font-size: 13px;
-            color: #94a3b8;
+            color: #a1a1aa;
             line-height: 1.6;
         }
 
         .info-box code {
-            background: rgba(99, 102, 241, 0.12);
+            background: rgba(124, 58, 237, 0.12);
             padding: 2px 8px;
             border-radius: 4px;
             font-family: 'Courier New', monospace;
             font-size: 12px;
-            color: #818cf8;
-            border: 1px solid rgba(99, 102, 241, 0.2);
+            color: #a78bfa;
+            border: 1px solid rgba(124, 58, 237, 0.2);
         }
 
         @media (max-width: 480px) {
@@ -227,6 +240,9 @@
     </style>
 </head>
 <body>
+    <div class="bg-orb bg-orb-violet" aria-hidden="true"></div>
+    <div class="bg-orb bg-orb-blue" aria-hidden="true"></div>
+    <div class="login-wrap">
     <div class="login-container">
         <div class="login-header">
             <div class="logo">
@@ -274,10 +290,11 @@
                 <button type="submit" class="btn-login">Anmelden</button>
             </form>
 
-            <div style="text-align: center; margin-top: 24px; font-size: 14px; color: #94a3b8;">
-                <p>Noch kein Konto? <a href="/register" style="color: #818cf8; text-decoration: none; font-weight: 500;">Registrieren</a></p>
+            <div style="text-align: center; margin-top: 24px; font-size: 14px; color: #a1a1aa;">
+                <p>Noch kein Konto? <a href="/register" style="color: #a78bfa; text-decoration: none; font-weight: 500;">Registrieren</a></p>
             </div>
         </div>
     </div>
+    </div><!-- /.login-wrap -->
 </body>
 </html>
