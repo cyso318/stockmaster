@@ -419,7 +419,24 @@ def init_db():
                   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                   FOREIGN KEY (organization_id) REFERENCES organizations (id))''')
 
+    # Entnahmescheine Tabelle
+    c.execute('''CREATE TABLE IF NOT EXISTS withdrawal_slips
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  organization_id INTEGER NOT NULL,
+                  user_id INTEGER,
+                  reference TEXT,
+                  notes TEXT,
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  FOREIGN KEY (organization_id) REFERENCES organizations (id),
+                  FOREIGN KEY (user_id) REFERENCES users (id))''')
+
     conn.commit()
+
+    # Migration: slip_id Feld zu movements hinzufügen
+    try:
+        c.execute("ALTER TABLE movements ADD COLUMN slip_id INTEGER REFERENCES withdrawal_slips(id)")
+    except:
+        pass
 
     # Migrationen: Erweitere maintenance_history um neue Felder
     for col_statement in [
@@ -1976,18 +1993,20 @@ def move_item(id):
     """Einbuchen oder Ausbuchen von Artikeln"""
     conn = get_db_connection()
     data = request.json
-    
+
     move_type = data['type']  # 'in' oder 'out'
     quantity = int(data['quantity'])
-    
+    organization_id = session.get('organization_id')
+    user_id = session.get('user_id')
+
     # Aktuellen Bestand holen
     item = conn.execute('SELECT quantity FROM items WHERE id = ?', (id,)).fetchone()
     if not item:
         conn.close()
         return jsonify({'success': False, 'message': 'Artikel nicht gefunden'}), 404
-    
+
     current_qty = item['quantity']
-    
+
     if move_type == 'in':
         new_qty = current_qty + quantity
     else:  # out
@@ -1995,20 +2014,126 @@ def move_item(id):
             conn.close()
             return jsonify({'success': False, 'message': 'Nicht genügend Bestand'}), 400
         new_qty = current_qty - quantity
-    
+
     # Bestand aktualisieren
     conn.execute('UPDATE items SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
                 (new_qty, id))
-    
+
+    slip_id = None
+    # Bei Ausbuchung automatisch Entnahmeschein erstellen
+    if move_type == 'out':
+        cursor = conn.execute(
+            '''INSERT INTO withdrawal_slips (organization_id, user_id, reference, notes)
+               VALUES (?, ?, ?, ?)''',
+            (organization_id, user_id, data.get('reference'), data.get('notes'))
+        )
+        slip_id = cursor.lastrowid
+
     # Bewegung protokollieren
-    conn.execute('''INSERT INTO movements (item_id, type, quantity, reference, notes)
-                   VALUES (?, ?, ?, ?, ?)''',
-                (id, move_type, quantity, data.get('reference'), data.get('notes')))
-    
+    conn.execute(
+        '''INSERT INTO movements (item_id, user_id, type, quantity, reference, notes, slip_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+        (id, user_id, move_type, quantity, data.get('reference'), data.get('notes'), slip_id)
+    )
+
     conn.commit()
     conn.close()
-    
-    return jsonify({'success': True, 'message': 'Bewegung gebucht', 'new_quantity': new_qty})
+
+    return jsonify({'success': True, 'message': 'Bewegung gebucht', 'new_quantity': new_qty, 'slip_id': slip_id})
+
+
+@app.route('/api/withdrawals/batch', methods=['POST'])
+@login_required
+@csrf_protect_api()
+def create_batch_withdrawal():
+    """Sammelentnahme: mehrere Artikel auf einmal ausbuchen und einen gemeinsamen Schein erstellen"""
+    conn = get_db_connection()
+    data = request.json
+    items_list = data.get('items', [])
+    organization_id = session.get('organization_id')
+    user_id = session.get('user_id')
+
+    if not items_list:
+        conn.close()
+        return jsonify({'success': False, 'message': 'Keine Artikel angegeben'}), 400
+
+    # Vorab alle Bestände prüfen
+    for entry in items_list:
+        item = conn.execute(
+            'SELECT quantity FROM items WHERE id = ? AND organization_id = ?',
+            (entry['item_id'], organization_id)
+        ).fetchone()
+        if not item:
+            conn.close()
+            return jsonify({'success': False, 'message': f'Artikel {entry["item_id"]} nicht gefunden'}), 404
+        if item['quantity'] < int(entry['quantity']):
+            conn.close()
+            return jsonify({'success': False, 'message': f'Nicht genügend Bestand für Artikel {entry["item_id"]}'}), 400
+
+    # Sammelschein anlegen
+    cursor = conn.execute(
+        '''INSERT INTO withdrawal_slips (organization_id, user_id, reference, notes)
+           VALUES (?, ?, ?, ?)''',
+        (organization_id, user_id, data.get('reference'), data.get('notes'))
+    )
+    slip_id = cursor.lastrowid
+
+    # Alle Positionen ausbuchen
+    for entry in items_list:
+        item_id = int(entry['item_id'])
+        quantity = int(entry['quantity'])
+        conn.execute(
+            'UPDATE items SET quantity = quantity - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            (quantity, item_id)
+        )
+        conn.execute(
+            '''INSERT INTO movements (item_id, user_id, type, quantity, reference, notes, slip_id)
+               VALUES (?, ?, 'out', ?, ?, ?, ?)''',
+            (item_id, user_id, quantity, data.get('reference'), entry.get('notes'), slip_id)
+        )
+
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'slip_id': slip_id})
+
+
+@app.route('/slip/<int:slip_id>')
+@login_required
+def print_slip(slip_id):
+    """Entnahmeschein drucken"""
+    organization_id = session.get('organization_id')
+    conn = get_db_connection()
+
+    slip = conn.execute(
+        '''SELECT ws.*, u.first_name || ' ' || u.last_name AS user_name, u.username,
+                  o.name AS org_name
+           FROM withdrawal_slips ws
+           LEFT JOIN users u ON ws.user_id = u.id
+           LEFT JOIN organizations o ON ws.organization_id = o.id
+           WHERE ws.id = ? AND ws.organization_id = ?''',
+        (slip_id, organization_id)
+    ).fetchone()
+
+    if not slip:
+        conn.close()
+        return 'Entnahmeschein nicht gefunden', 404
+
+    movements = conn.execute(
+        '''SELECT m.quantity, m.notes,
+                  i.name AS item_name, i.sku, i.unit,
+                  l.name AS location_name
+           FROM movements m
+           JOIN items i ON m.item_id = i.id
+           LEFT JOIN locations l ON i.location_id = l.id
+           WHERE m.slip_id = ?
+           ORDER BY m.id''',
+        (slip_id,)
+    ).fetchall()
+
+    conn.close()
+    return render_template('entnahmeschein.html',
+                           slip=dict(slip),
+                           movements=[dict(m) for m in movements])
 
 @app.route('/api/items/<int:id>/movements')
 @login_required

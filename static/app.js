@@ -1108,48 +1108,201 @@ async function deleteItem(id) {
 
 function openMovementModal(itemId, type) {
     const item = items.find(i => i.id === itemId);
-    
+
     document.getElementById('movement-item-id').value = itemId;
     document.getElementById('movement-type').value = type;
     document.getElementById('movement-item-name').value = item.name;
     document.getElementById('movement-current-qty').value = `${item.quantity} ${item.unit}`;
-    
-    document.getElementById('movement-modal-title').textContent = 
+
+    document.getElementById('movement-modal-title').textContent =
         type === 'in' ? '📦 Einbuchen' : '📤 Ausbuchen';
-    
+
     const submitBtn = document.getElementById('movement-submit-btn');
     submitBtn.className = type === 'in' ? 'btn btn-success' : 'btn btn-danger';
-    
+
+    // Sammelschein-Button nur bei Ausbuchung anzeigen
+    const cartBtn = document.getElementById('movement-cart-btn');
+    cartBtn.style.display = type === 'out' ? 'inline-flex' : 'none';
+
+    document.getElementById('movement-submit-btn').style.display = '';
     document.getElementById('movement-form').reset();
     document.getElementById('movement-item-id').value = itemId;
     document.getElementById('movement-type').value = type;
-    
+
     openModal('movement-modal');
 }
 
 async function saveMovement(event) {
     event.preventDefault();
-    
+
     const itemId = document.getElementById('movement-item-id').value;
+    const moveType = document.getElementById('movement-type').value;
     const data = {
-        type: document.getElementById('movement-type').value,
+        type: moveType,
         quantity: parseInt(document.getElementById('movement-quantity').value),
         reference: document.getElementById('movement-reference').value,
         notes: document.getElementById('movement-notes').value
     };
-    
+
     try {
         const result = await apiCall(`/api/items/${itemId}/move`, {
             method: 'POST',
             body: JSON.stringify(data)
         });
-        
-        showAlert(result.message);
-        closeModal('movement-modal');
+
         loadItems();
         loadDashboard();
+
+        if (moveType === 'out' && result.slip_id) {
+            closeModal('movement-modal');
+            window.open(`/slip/${result.slip_id}`, '_blank');
+        } else {
+            showAlert(result.message);
+            closeModal('movement-modal');
+        }
     } catch (error) {
         showAlert('Fehler beim Buchen der Bewegung', 'error');
+    }
+}
+
+// ============= SAMMELSCHEIN (WARENKORB) =============
+
+let cart = [];  // [{item_id, item_name, sku, unit, quantity, notes}]
+
+function updateCartFab() {
+    const fab = document.getElementById('cart-fab');
+    const badge = document.getElementById('cart-badge');
+    if (cart.length > 0) {
+        fab.style.display = 'flex';
+        badge.textContent = cart.length;
+    } else {
+        fab.style.display = 'none';
+    }
+}
+
+function addToCart() {
+    const itemId = parseInt(document.getElementById('movement-item-id').value);
+    const quantity = parseInt(document.getElementById('movement-quantity').value);
+    const notes = document.getElementById('movement-notes').value;
+    const item = items.find(i => i.id === itemId);
+
+    if (!quantity || quantity < 1) {
+        showAlert('Bitte Menge eingeben', 'error');
+        return;
+    }
+
+    // Prüfen ob Artikel bereits im Warenkorb
+    const existing = cart.find(c => c.item_id === itemId);
+    if (existing) {
+        existing.quantity += quantity;
+        if (notes) existing.notes = notes;
+    } else {
+        cart.push({
+            item_id: itemId,
+            item_name: item ? item.name : `Artikel #${itemId}`,
+            sku: item ? item.sku : '',
+            unit: item ? item.unit : 'Stk.',
+            quantity,
+            notes
+        });
+    }
+
+    updateCartFab();
+    closeModal('movement-modal');
+    showAlert(`"${item ? item.name : 'Artikel'}" zum Sammelschein hinzugefügt`);
+}
+
+function openCartModal() {
+    renderCartItems();
+    openModal('cart-modal');
+}
+
+function renderCartItems() {
+    const container = document.getElementById('cart-items-list');
+    if (cart.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-secondary); text-align:center; padding: 20px;">Keine Positionen im Sammelschein.</p>';
+        return;
+    }
+
+    let html = `<table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--border-color);">
+                <th style="text-align:left; padding:8px 4px;">Artikel</th>
+                <th style="text-align:left; padding:8px 4px;">SKU</th>
+                <th style="text-align:right; padding:8px 4px;">Menge</th>
+                <th style="text-align:left; padding:8px 4px;">Einheit</th>
+                <th style="padding:8px 4px;"></th>
+            </tr>
+        </thead>
+        <tbody>`;
+
+    cart.forEach((entry, idx) => {
+        html += `<tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding:8px 4px;">${entry.item_name}</td>
+            <td style="padding:8px 4px; color: var(--text-secondary);">${entry.sku || '—'}</td>
+            <td style="padding:8px 4px; text-align:right; font-weight:bold;">${entry.quantity}</td>
+            <td style="padding:8px 4px;">${entry.unit || 'Stk.'}</td>
+            <td style="padding:8px 4px;">
+                <button onclick="removeFromCart(${idx})" style="background:none; border:none; color: var(--danger); cursor:pointer; font-size:16px;" title="Entfernen">×</button>
+            </td>
+        </tr>`;
+        if (entry.notes) {
+            html += `<tr><td colspan="5" style="padding:2px 4px 8px 16px; color: var(--text-secondary); font-size:11px; font-style:italic;">${entry.notes}</td></tr>`;
+        }
+    });
+
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+}
+
+function removeFromCart(idx) {
+    cart.splice(idx, 1);
+    updateCartFab();
+    renderCartItems();
+}
+
+function clearCart() {
+    cart = [];
+    updateCartFab();
+    renderCartItems();
+}
+
+async function submitCart() {
+    if (cart.length === 0) {
+        showAlert('Keine Positionen im Sammelschein', 'error');
+        return;
+    }
+
+    const reference = document.getElementById('cart-reference').value;
+    const notes = document.getElementById('cart-notes').value;
+
+    const btn = document.getElementById('cart-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Wird verarbeitet...';
+
+    try {
+        const result = await apiCall('/api/withdrawals/batch', {
+            method: 'POST',
+            body: JSON.stringify({
+                items: cart.map(c => ({ item_id: c.item_id, quantity: c.quantity, notes: c.notes })),
+                reference,
+                notes
+            })
+        });
+
+        clearCart();
+        closeModal('cart-modal');
+        loadItems();
+        loadDashboard();
+
+        if (result.slip_id) {
+            window.open(`/slip/${result.slip_id}`, '_blank');
+        }
+    } catch (error) {
+        showAlert('Fehler beim Ausbuchen', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Alle ausbuchen & Schein erstellen';
     }
 }
 

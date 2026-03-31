@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entnahmeschein #{{ slip.id }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12pt;
+            color: #000;
+            background: #fff;
+            padding: 20mm 15mm;
+        }
+
+        .no-print {
+            background: #f0f4ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .no-print button {
+            padding: 8px 20px;
+            background: #6366f1;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12pt;
+        }
+        .no-print button:hover { background: #4f46e5; }
+        .no-print .btn-close {
+            background: #64748b;
+            margin-left: auto;
+        }
+
+        .slip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8mm;
+            border-bottom: 2px solid #000;
+            padding-bottom: 6mm;
+        }
+        .slip-header h1 {
+            font-size: 20pt;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .slip-header .slip-meta {
+            text-align: right;
+            font-size: 10pt;
+            color: #333;
+        }
+        .slip-header .slip-meta strong {
+            font-size: 12pt;
+            color: #000;
+        }
+
+        .org-name {
+            font-size: 11pt;
+            color: #555;
+            margin-top: 2px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4mm 10mm;
+            margin-bottom: 8mm;
+            font-size: 11pt;
+        }
+        .info-field label {
+            font-weight: bold;
+            display: block;
+            font-size: 9pt;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1mm;
+        }
+        .info-field span {
+            display: block;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 1mm;
+            min-height: 6mm;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8mm;
+            font-size: 11pt;
+        }
+        thead tr {
+            background: #000;
+            color: #fff;
+        }
+        thead th {
+            padding: 3mm 4mm;
+            text-align: left;
+            font-size: 10pt;
+            font-weight: bold;
+        }
+        tbody tr:nth-child(even) { background: #f5f5f5; }
+        tbody td {
+            padding: 2.5mm 4mm;
+            border-bottom: 1px solid #ddd;
+        }
+        tbody td.qty {
+            text-align: right;
+            font-weight: bold;
+            font-size: 12pt;
+        }
+
+        .notes-row td {
+            font-size: 9pt;
+            color: #555;
+            padding-top: 1mm;
+            padding-bottom: 3mm;
+            border-bottom: 1px dashed #ccc;
+            font-style: italic;
+        }
+
+        .total-row td {
+            font-weight: bold;
+            border-top: 2px solid #000;
+            padding-top: 3mm;
+        }
+
+        .slip-notes {
+            margin-bottom: 8mm;
+            font-size: 11pt;
+        }
+        .slip-notes label {
+            font-weight: bold;
+            font-size: 9pt;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 1mm;
+        }
+        .slip-notes .notes-box {
+            border: 1px solid #ccc;
+            min-height: 12mm;
+            padding: 2mm 3mm;
+            font-size: 11pt;
+        }
+
+        .signature-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15mm;
+            margin-top: 12mm;
+        }
+        .sig-field label {
+            font-size: 9pt;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 1mm;
+        }
+        .sig-line {
+            border-bottom: 1px solid #000;
+            height: 14mm;
+            margin-bottom: 2mm;
+        }
+        .sig-caption {
+            font-size: 9pt;
+            color: #555;
+        }
+
+        .slip-footer {
+            margin-top: 8mm;
+            padding-top: 3mm;
+            border-top: 1px solid #ccc;
+            font-size: 8pt;
+            color: #888;
+            text-align: center;
+        }
+
+        @media print {
+            body { padding: 10mm 12mm; }
+            .no-print { display: none !important; }
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print">
+    <button onclick="window.print()">&#x1F5B6; Drucken</button>
+    <button class="btn-close" onclick="window.close()">Schließen</button>
+</div>
+
+<div class="slip-header">
+    <div>
+        <h1>Entnahmeschein</h1>
+        <div class="org-name">{{ slip.org_name }}</div>
+    </div>
+    <div class="slip-meta">
+        <div><strong>Nr. {{ '%05d' % slip.id }}</strong></div>
+        <div>{{ slip.created_at[:16].replace('T', ' ') }}</div>
+    </div>
+</div>
+
+<div class="info-grid">
+    <div class="info-field">
+        <label>Entnommen von</label>
+        <span>{{ slip.user_name or slip.username or '—' }}</span>
+    </div>
+    <div class="info-field">
+        <label>Datum / Uhrzeit</label>
+        <span>{{ slip.created_at[:16].replace('T', ' ') }}</span>
+    </div>
+    {% if slip.reference %}
+    <div class="info-field">
+        <label>Referenz / Auftrag</label>
+        <span>{{ slip.reference }}</span>
+    </div>
+    {% endif %}
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th style="width:40%">Artikel</th>
+            <th style="width:15%">SKU</th>
+            <th style="width:20%">Standort</th>
+            <th style="width:10%" class="qty">Menge</th>
+            <th style="width:15%">Einheit</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for m in movements %}
+        <tr>
+            <td>{{ m.item_name }}</td>
+            <td>{{ m.sku or '—' }}</td>
+            <td>{{ m.location_name or '—' }}</td>
+            <td class="qty">{{ m.quantity }}</td>
+            <td>{{ m.unit or 'Stk.' }}</td>
+        </tr>
+        {% if m.notes %}
+        <tr class="notes-row">
+            <td colspan="5" style="padding-left: 8mm;">&#x2937; {{ m.notes }}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+        <tr class="total-row">
+            <td colspan="3">Gesamt {{ movements | length }} Position(en)</td>
+            <td class="qty">{{ movements | sum(attribute='quantity') }}</td>
+            <td></td>
+        </tr>
+    </tbody>
+</table>
+
+{% if slip.notes %}
+<div class="slip-notes">
+    <label>Anmerkungen</label>
+    <div class="notes-box">{{ slip.notes }}</div>
+</div>
+{% endif %}
+
+<div class="signature-section">
+    <div class="sig-field">
+        <label>Entnehmer</label>
+        <div class="sig-line"></div>
+        <div class="sig-caption">Unterschrift &nbsp;&nbsp;&nbsp; Datum: _______________</div>
+    </div>
+    <div class="sig-field">
+        <label>Genehmigt von</label>
+        <div class="sig-line"></div>
+        <div class="sig-caption">Unterschrift &nbsp;&nbsp;&nbsp; Datum: _______________</div>
+    </div>
+</div>
+
+<div class="slip-footer">
+    StockMaster &bull; Entnahmeschein Nr. {{ '%05d' % slip.id }} &bull; {{ slip.org_name }}
+</div>
+
+</body>
+</html>
