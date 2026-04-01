@@ -1308,74 +1308,12 @@ async function submitCart() {
 
 // ============= CLOUD SYNC & EXPORT =============
 
-async function syncToCloud() {
-    try {
-        showAlert('Backup wird erstellt...', 'success');
-        const result = await apiCall('/api/backup/manual', { method: 'POST' });
-
-        if (result.success) {
-            showAlert(`✓ Backup erfolgreich! Datei: ${result.filename || 'backup.db'}`, 'success');
-        } else {
-            showAlert(`Fehler beim Backup: ${result.error || 'Unbekannter Fehler'}`, 'error');
-        }
-    } catch (error) {
-        showAlert('Fehler beim Backup', 'error');
-    }
+// Sync/Backup entfernt – Daten liegen in Supabase (cloud-nativ)
+function syncToCloud() {
+    showAlert('Daten werden in Supabase gespeichert – kein manuelles Backup nötig.', 'success');
 }
-
-// Auto-Backup-Status abrufen
-async function getBackupStatus() {
-    try {
-        const status = await apiCall('/api/backup/status');
-        return status;
-    } catch (error) {
-        console.error('Fehler beim Abrufen des Backup-Status:', error);
-        return null;
-    }
-}
-
-// Backup-Status im UI anzeigen
-async function updateBackupStatusUI() {
-    const status = await getBackupStatus();
-
-    if (!status) {
-        return;
-    }
-
-    // Zeige Backup-Info in der Console für Debug
-    console.log('Auto-Backup Status:', status);
-
-    // Update Burger-Menü-Text
-    const backupStatusText = document.getElementById('backup-status-text');
-    if (backupStatusText && status.is_running) {
-        if (status.last_backup_time) {
-            const lastBackup = new Date(status.last_backup_time);
-            const now = new Date();
-            const hoursAgo = Math.round((now - lastBackup) / (1000 * 60 * 60));
-
-            let statusText = '';
-            if (hoursAgo < 1) {
-                statusText = 'Letztes Backup: vor wenigen Minuten';
-            } else if (hoursAgo === 1) {
-                statusText = 'Letztes Backup: vor 1 Stunde';
-            } else if (hoursAgo < 24) {
-                statusText = `Letztes Backup: vor ${hoursAgo} Stunden`;
-            } else {
-                const daysAgo = Math.round(hoursAgo / 24);
-                statusText = `Letztes Backup: vor ${daysAgo} Tag${daysAgo > 1 ? 'en' : ''}`;
-            }
-
-            backupStatusText.textContent = `${statusText} | Auto-Backup aktiv`;
-            backupStatusText.style.color = 'var(--success)';
-        } else {
-            backupStatusText.textContent = 'Auto-Backup aktiv | Noch kein Backup';
-            backupStatusText.style.color = 'var(--warning)';
-        }
-    } else if (backupStatusText) {
-        backupStatusText.textContent = 'Google Drive Backup';
-        backupStatusText.style.color = 'var(--text-tertiary)';
-    }
-}
+async function getBackupStatus() { return null; }
+async function updateBackupStatusUI() {}
 
 function exportCSV() {
     window.location.href = '/api/export/csv';

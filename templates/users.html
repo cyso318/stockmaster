@@ -459,15 +459,15 @@
                     <input type="text" id="user-username" required minlength="3">
                 </div>
 
-                <div class="form-group" id="password-group">
-                    <label id="password-label">Passwort *</label>
-                    <input type="password" id="user-password" minlength="6">
-                    <small style="color: var(--gray-600); font-size: 12px;" id="password-hint">Mindestens 6 Zeichen</small>
+                <div class="form-group">
+                    <label>E-Mail *</label>
+                    <input type="email" id="user-email" required>
                 </div>
 
-                <div class="form-group">
-                    <label>E-Mail</label>
-                    <input type="email" id="user-email">
+                <div class="form-group" id="password-group">
+                    <label id="password-label">Passwort *</label>
+                    <input type="password" id="user-password" minlength="8">
+                    <small style="color: var(--gray-600); font-size: 12px;" id="password-hint">Min. 8 Zeichen, Groß-/Kleinbuchstaben + Zahl</small>
                 </div>
 
                 <div class="form-group">
@@ -633,6 +633,10 @@
             const isAdmin = document.getElementById('user-is-admin').checked;
 
             // Validation
+            if (!email) {
+                showAlert('E-Mail ist erforderlich', 'error');
+                return;
+            }
             if (!userId && !password) {
                 showAlert('Passwort ist erforderlich für neue Benutzer', 'error');
                 return;

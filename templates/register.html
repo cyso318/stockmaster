@@ -249,6 +249,11 @@
                 </div>
 
                 <div class="form-group">
+                    <label>E-Mail (Admin)</label>
+                    <input type="email" id="org-email" name="email" required placeholder="admin@firma.de">
+                </div>
+
+                <div class="form-group">
                     <label>Admin-Benutzername</label>
                     <input type="text" id="org-username" name="username" required placeholder="admin">
                 </div>
@@ -280,6 +285,11 @@
                     <div style="font-size: 13px; color: #38bdf8;">
                         <strong>Organisation:</strong> <span id="org-name-text">-</span>
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label>E-Mail</label>
+                    <input type="email" id="user-email" name="email" required placeholder="name@firma.de">
                 </div>
 
                 <div class="form-group">
@@ -335,6 +345,7 @@
             const formData = {
                 type: 'organization',
                 org_name: document.getElementById('org-name').value,
+                email: document.getElementById('org-email').value,
                 username: document.getElementById('org-username').value,
                 password: document.getElementById('org-password').value
             };
@@ -416,6 +427,7 @@
             const formData = {
                 type: 'user',
                 invitation_token: document.getElementById('user-invitation-token').value,
+                email: document.getElementById('user-email').value,
                 username: document.getElementById('user-username').value,
                 password: document.getElementById('user-password').value
             };
