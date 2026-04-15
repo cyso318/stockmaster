@@ -1,7 +1,7 @@
 // Service Worker für StockMaster PWA
 // Ermöglicht Offline-Funktionalität und schnelleres Laden
 
-const CACHE_VERSION = 'stockmaster-v1.0.0';
+const CACHE_VERSION = 'stockmaster-v0.5.0';
 const CACHE_NAME = `${CACHE_VERSION}-static`;
 const DATA_CACHE_NAME = `${CACHE_VERSION}-data`;
 

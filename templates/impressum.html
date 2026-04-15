@@ -5,151 +5,157 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Impressum - StockMaster</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #09090b;
+            --surface: rgba(30,41,59,0.7);
+            --border: rgba(255,255,255,0.08);
+            --text: #f4f4f5;
+            --muted: #a1a1aa;
+            --zinc-700: #3f3f46;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            padding: 40px 20px;
+            padding: 0 0 80px;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 40px;
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--zinc-700); border-radius: 3px; }
 
-        h1 {
-            font-size: 32px;
-            color: #1f2937;
-            margin-bottom: 10px;
-        }
+        .orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+        .orb { position: absolute; border-radius: 50%; filter: blur(80px); animation: drift 20s ease-in-out infinite alternate; }
+        .orb-1 { width: 500px; height: 500px; background: rgba(124,58,237,0.1); top: -100px; left: -100px; }
+        .orb-2 { width: 350px; height: 350px; background: rgba(29,78,216,0.08); bottom: 0; right: -80px; animation-delay: -8s; }
+        @keyframes drift { 0% { transform: translate(0,0); } 100% { transform: translate(30px,40px); } }
 
-        .subtitle {
-            color: #6b7280;
-            margin-bottom: 30px;
-            font-size: 14px;
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(9,9,11,0.85); backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem; height: 60px;
+            display: flex; align-items: center;
+        }
+        .nav-inner {
+            max-width: 800px; margin: 0 auto; width: 100%;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo {
+            font-size: 17px; font-weight: 700;
+            background: linear-gradient(135deg, #7c3aed, #1d4ed8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            text-decoration: none;
+        }
+        .back-btn {
+            display: flex; align-items: center; gap: 6px;
+            color: var(--muted); text-decoration: none; font-size: 13px;
+            padding: 7px 12px; border-radius: 7px; border: 1px solid var(--border);
+            transition: color 0.2s, background 0.2s;
+        }
+        .back-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+        .container { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; padding: 48px 2rem 0; }
+
+        .page-title { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 6px; }
+        .page-subtitle { color: var(--muted); font-size: 14px; margin-bottom: 48px; }
+
+        .card {
+            background: var(--surface); backdrop-filter: blur(24px);
+            border: 1px solid var(--border); border-radius: 16px;
+            padding: 36px; margin-bottom: 16px;
         }
 
         h2 {
-            font-size: 20px;
-            color: #374151;
-            margin-top: 30px;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #e5e7eb;
+            font-size: 18px; font-weight: 600;
+            margin-bottom: 16px; padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
         }
+        h3 { font-size: 15px; font-weight: 600; color: var(--text); margin: 20px 0 10px; }
+        p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 10px; }
+        strong { color: var(--text); font-weight: 500; }
 
-        p {
-            color: #4b5563;
-            line-height: 1.6;
-            margin-bottom: 12px;
+        .contact-box {
+            background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+            border-radius: 10px; padding: 16px 20px; margin: 16px 0;
         }
-
-        .contact-info {
-            background: #f9fafb;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-
-        .contact-info p {
-            margin-bottom: 4px;
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 30px;
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: transform 0.2s;
-        }
-
-        .back-link:hover {
-            transform: translateY(-2px);
-        }
-
-        strong {
-            color: #1f2937;
-        }
+        .contact-box p { margin-bottom: 2px; }
 
         .info-box {
-            background: #eff6ff;
-            border-left: 4px solid #3b82f6;
-            padding: 16px;
-            margin: 20px 0;
-            border-radius: 4px;
+            background: rgba(29,78,216,0.1); border: 1px solid rgba(29,78,216,0.2);
+            border-radius: 8px; padding: 14px 16px; margin: 16px 0;
         }
+        .info-box p { color: #93c5fd; margin: 0; }
 
-        .info-box p {
-            color: #1e40af;
-            margin: 0;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 24px;
-            }
-
-            h1 {
-                font-size: 24px;
-            }
-
-            h2 {
-                font-size: 18px;
-            }
-        }
+        @media (max-width: 640px) { .card { padding: 20px; } .page-title { font-size: 26px; } }
     </style>
 </head>
 <body>
+    <div class="orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="logo">StockMaster</a>
+            <a href="/" class="back-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 5l-7 7 7 7"/>
+                </svg>
+                Zurück
+            </a>
+        </div>
+    </nav>
+
     <div class="container">
-        <h1>Impressum</h1>
-        <p class="subtitle">Angaben gemäß § 5 TMG</p>
+        <h1 class="page-title">Impressum</h1>
+        <p class="page-subtitle">Angaben gemäß § 5 TMG</p>
 
-        <h2>Anbieter</h2>
-        <div class="contact-info">
-            <p><strong>Robin Weschenfelder</strong></p>
-            <p>Straße der Einheit 9</p>
-            <p>07318 Saalfeld</p>
-            <p>Deutschland</p>
+        <div class="card">
+            <h2>Anbieter</h2>
+            <div class="contact-box">
+                <p><strong>Robin Weschenfelder</strong></p>
+                <p>Straße der Einheit 9</p>
+                <p>07318 Saalfeld</p>
+                <p>Deutschland</p>
+            </div>
         </div>
 
-        <h2>Kontakt</h2>
-        <p><strong>E-Mail:</strong> r.weschenfelder@proton.me</p>
-
-        <h2>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h2>
-        <p>Robin Weschenfelder</p>
-        <p>Straße der Einheit 9</p>
-        <p>07318 Saalfeld</p>
-
-        <h2>Haftungsausschluss</h2>
-
-        <h3 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px; color: #374151;">Haftung für Inhalte</h3>
-        <p>Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.</p>
-
-        <h3 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px; color: #374151;">Haftung für Links</h3>
-        <p>Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich. Die verlinkten Seiten wurden zum Zeitpunkt der Verlinkung auf mögliche Rechtsverstöße überprüft. Rechtswidrige Inhalte waren zum Zeitpunkt der Verlinkung nicht erkennbar.</p>
-
-        <h3 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px; color: #374151;">Urheberrecht</h3>
-        <p>Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers. Downloads und Kopien dieser Seite sind nur für den privaten, nicht kommerziellen Gebrauch gestattet.</p>
-
-        <div class="info-box">
-            <p><strong>Hinweis:</strong> StockMaster ist eine Lagerverwaltungssoftware für den privaten und gewerblichen Gebrauch. Die Nutzung erfolgt auf eigene Verantwortung.</p>
+        <div class="card">
+            <h2>Kontakt</h2>
+            <p><strong>E-Mail:</strong> r.weschenfelder@proton.me</p>
         </div>
 
-        <a href="/" class="back-link">← Zurück zur Anwendung</a>
+        <div class="card">
+            <h2>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h2>
+            <div class="contact-box">
+                <p><strong>Robin Weschenfelder</strong></p>
+                <p>Straße der Einheit 9</p>
+                <p>07318 Saalfeld</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Haftungsausschluss</h2>
+
+            <h3>Haftung für Inhalte</h3>
+            <p>Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.</p>
+
+            <h3>Haftung für Links</h3>
+            <p>Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich. Die verlinkten Seiten wurden zum Zeitpunkt der Verlinkung auf mögliche Rechtsverstöße überprüft. Rechtswidrige Inhalte waren zum Zeitpunkt der Verlinkung nicht erkennbar.</p>
+
+            <h3>Urheberrecht</h3>
+            <p>Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers. Downloads und Kopien dieser Seite sind nur für den privaten, nicht kommerziellen Gebrauch gestattet.</p>
+
+            <div class="info-box">
+                <p><strong>Hinweis:</strong> StockMaster ist eine Lagerverwaltungssoftware für den privaten und gewerblichen Gebrauch. Die Nutzung erfolgt auf eigene Verantwortung.</p>
+            </div>
+        </div>
     </div>
 </body>
 </html>

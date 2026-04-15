@@ -5,267 +5,370 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datenschutzerklärung - StockMaster</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #09090b;
+            --surface: rgba(30,41,59,0.7);
+            --border: rgba(255,255,255,0.08);
+            --text: #f4f4f5;
+            --muted: #a1a1aa;
+            --zinc-700: #3f3f46;
+            --zinc-800: #27272a;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            padding: 40px 20px;
+            padding: 0 0 80px;
         }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 40px;
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--zinc-700); border-radius: 3px; }
+
+        .orbs {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 0; overflow: hidden;
         }
-        h1 { font-size: 32px; color: #1f2937; margin-bottom: 10px; }
-        .subtitle { color: #6b7280; margin-bottom: 30px; font-size: 14px; }
-        h2 {
-            font-size: 20px;
-            color: #374151;
-            margin-top: 30px;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #e5e7eb;
+        .orb {
+            position: absolute; border-radius: 50%;
+            filter: blur(80px);
+            animation: drift 20s ease-in-out infinite alternate;
         }
-        h3 { font-size: 16px; color: #374151; margin-top: 20px; margin-bottom: 10px; }
-        p, li { color: #4b5563; line-height: 1.6; margin-bottom: 12px; }
-        ul { margin-left: 20px; margin-bottom: 16px; }
-        .contact-info {
-            background: #f9fafb;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
+        .orb-1 { width: 500px; height: 500px; background: rgba(124,58,237,0.1); top: -100px; left: -100px; }
+        .orb-2 { width: 350px; height: 350px; background: rgba(29,78,216,0.08); bottom: 0; right: -80px; animation-delay: -8s; }
+        @keyframes drift {
+            0%   { transform: translate(0,0); }
+            100% { transform: translate(30px, 40px); }
         }
-        .contact-info p { margin-bottom: 4px; }
-        .back-link {
-            display: inline-block;
-            margin-top: 30px;
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+
+        /* Nav */
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(9,9,11,0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem; height: 60px;
+            display: flex; align-items: center;
+        }
+        .nav-inner {
+            max-width: 900px; margin: 0 auto; width: 100%;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo {
+            font-size: 17px; font-weight: 700;
+            background: linear-gradient(135deg, #7c3aed, #1d4ed8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
             text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: transform 0.2s;
         }
-        .back-link:hover { transform: translateY(-2px); }
-        strong { color: #1f2937; }
+        .back-btn {
+            display: flex; align-items: center; gap: 6px;
+            color: var(--muted); text-decoration: none; font-size: 13px;
+            padding: 7px 12px; border-radius: 7px; border: 1px solid var(--border);
+            transition: color 0.2s, background 0.2s;
+        }
+        .back-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+        /* Content */
+        .container {
+            position: relative; z-index: 1;
+            max-width: 900px; margin: 0 auto; padding: 48px 2rem 0;
+        }
+
+        .page-title { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 6px; }
+        .page-subtitle { color: var(--muted); font-size: 14px; margin-bottom: 48px; }
+
+        .card {
+            background: var(--surface);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 36px;
+            margin-bottom: 16px;
+        }
+
+        h2 {
+            font-size: 18px; font-weight: 600;
+            margin-bottom: 16px; padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 10px;
+        }
+        h2 .num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; border-radius: 8px;
+            background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(29,78,216,0.3));
+            border: 1px solid rgba(124,58,237,0.2);
+            font-size: 13px; font-weight: 700; color: #a78bfa;
+            flex-shrink: 0;
+        }
+
+        h3 { font-size: 15px; font-weight: 600; color: var(--text); margin: 20px 0 10px; }
+
+        p, li { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 10px; }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        ul li { list-style: disc; }
+        strong { color: var(--text); font-weight: 500; }
+
+        .contact-box {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin: 16px 0;
+        }
+        .contact-box p { margin-bottom: 2px; }
+
         .info-box {
-            background: #eff6ff;
-            border-left: 4px solid #3b82f6;
-            padding: 16px;
-            margin: 20px 0;
-            border-radius: 4px;
+            background: rgba(29,78,216,0.1);
+            border: 1px solid rgba(29,78,216,0.2);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin: 16px 0;
         }
-        .info-box p { color: #1e40af; margin: 0; }
-        @media (max-width: 768px) {
-            .container { padding: 24px; }
-            h1 { font-size: 24px; }
-            h2 { font-size: 18px; }
-            h3 { font-size: 15px; }
+        .info-box p { color: #93c5fd; margin: 0; }
+
+        .footer-note {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 12px; color: var(--zinc-700);
+            text-align: right;
+        }
+
+        @media (max-width: 640px) {
+            .card { padding: 20px; }
+            .page-title { font-size: 26px; }
         }
     </style>
 </head>
 <body>
+    <div class="orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="logo">StockMaster</a>
+            <a href="/" class="back-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 5l-7 7 7 7"/>
+                </svg>
+                Zurück
+            </a>
+        </div>
+    </nav>
+
     <div class="container">
-        <h1>Datenschutzerklärung</h1>
-        <p class="subtitle">Stand: Januar 2025</p>
+        <h1 class="page-title">Datenschutzerklärung</h1>
+        <p class="page-subtitle">Stand: Januar 2025</p>
 
-        <h2>1. Verantwortlicher</h2>
-        <div class="contact-info">
-            <p><strong>Robin Weschenfelder</strong></p>
-            <p>Straße der Einheit 9</p>
-            <p>07318 Saalfeld</p>
-            <p>Deutschland</p>
-            <p><strong>E-Mail:</strong> r.weschenfelder@proton.me</p>
+        <div class="card">
+            <h2><span class="num">1</span> Verantwortlicher</h2>
+            <div class="contact-box">
+                <p><strong>Robin Weschenfelder</strong></p>
+                <p>Straße der Einheit 9</p>
+                <p>07318 Saalfeld</p>
+                <p>Deutschland</p>
+                <p><strong>E-Mail:</strong> r.weschenfelder@proton.me</p>
+            </div>
         </div>
 
-        <h2>2. Allgemeine Hinweise</h2>
-        <p>Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie StockMaster nutzen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.</p>
-
-        <div class="info-box">
-            <p><strong>Wichtig:</strong> StockMaster ist eine selbst gehostete Lagerverwaltungssoftware. Wenn Sie StockMaster auf Ihrem eigenen Server betreiben, sind Sie selbst für die Einhaltung der Datenschutzbestimmungen verantwortlich.</p>
+        <div class="card">
+            <h2><span class="num">2</span> Allgemeine Hinweise</h2>
+            <p>Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie StockMaster nutzen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.</p>
+            <div class="info-box">
+                <p><strong>Wichtig:</strong> StockMaster ist eine selbst gehostete Lagerverwaltungssoftware. Wenn Sie StockMaster auf Ihrem eigenen Server betreiben, sind Sie selbst für die Einhaltung der Datenschutzbestimmungen verantwortlich.</p>
+            </div>
         </div>
 
-        <h2>3. Datenerfassung</h2>
+        <div class="card">
+            <h2><span class="num">3</span> Datenerfassung</h2>
 
-        <h3>3.1 Welche Daten werden erfasst?</h3>
-        <p>Bei der Nutzung von StockMaster werden folgende Daten erfasst und verarbeitet:</p>
+            <h3>3.1 Welche Daten werden erfasst?</h3>
+            <p>Bei der Nutzung von StockMaster werden folgende Daten erfasst und verarbeitet:</p>
 
-        <p><strong>Benutzerdaten:</strong></p>
-        <ul>
-            <li>Benutzername</li>
-            <li>E-Mail-Adresse</li>
-            <li>Passwort (verschlüsselt mit bcrypt)</li>
-            <li>Benutzerrolle (Admin, Standard-Benutzer)</li>
-            <li>Organisationszugehörigkeit</li>
-            <li>Zeitstempel der Kontoerstellung</li>
-        </ul>
+            <p><strong>Benutzerdaten:</strong></p>
+            <ul>
+                <li>Benutzername</li>
+                <li>E-Mail-Adresse</li>
+                <li>Passwort (verschlüsselt via Supabase Auth)</li>
+                <li>Benutzerrolle (Admin, Standard-Benutzer)</li>
+                <li>Organisationszugehörigkeit</li>
+                <li>Zeitstempel der Kontoerstellung</li>
+            </ul>
 
-        <p><strong>Lagerverwaltungsdaten:</strong></p>
-        <ul>
-            <li>Artikelinformationen (Name, SKU, Beschreibung, Barcode)</li>
-            <li>Kategorien und Standorte</li>
-            <li>Lagerbestand und Bewegungen (Ein-/Ausbuchungen)</li>
-            <li>Preise und Lieferanteninformationen</li>
-            <li>Wartungsinformationen und Notizen</li>
-            <li>Produktbilder (Upload-Dateien)</li>
-        </ul>
+            <p><strong>Lagerverwaltungsdaten:</strong></p>
+            <ul>
+                <li>Artikelinformationen (Name, SKU, Beschreibung, Barcode)</li>
+                <li>Kategorien und Standorte</li>
+                <li>Lagerbestand und Bewegungen (Ein-/Ausbuchungen)</li>
+                <li>Preise und Lieferanteninformationen</li>
+                <li>Wartungsinformationen und Notizen</li>
+                <li>Produktbilder (Upload-Dateien)</li>
+            </ul>
 
-        <p><strong>Technische Daten:</strong></p>
-        <ul>
-            <li>Session-Daten (temporäre Anmeldeinformationen)</li>
-            <li>CSRF-Tokens (Sicherheitstoken)</li>
-            <li>LocalStorage-Daten (Theme-Einstellungen)</li>
-            <li>Browser-Informationen und IP-Adresse (Server-Logs)</li>
-        </ul>
+            <p><strong>Technische Daten:</strong></p>
+            <ul>
+                <li>Session-Daten (temporäre Anmeldeinformationen)</li>
+                <li>CSRF-Tokens (Sicherheitstoken)</li>
+                <li>LocalStorage-Daten (Theme-Einstellungen)</li>
+                <li>Browser-Informationen und IP-Adresse (Server-Logs)</li>
+            </ul>
 
-        <h3>3.2 Wie werden die Daten erfasst?</h3>
-        <p>Die Daten werden erfasst, wenn Sie:</p>
-        <ul>
-            <li>Ein Benutzerkonto erstellen oder bearbeiten</li>
-            <li>Artikel, Kategorien oder Standorte anlegen oder ändern</li>
-            <li>Lagerbewegungen durchführen</li>
-            <li>Bilder hochladen</li>
-            <li>Die Anwendung nutzen (automatische Erfassung technischer Daten)</li>
-        </ul>
+            <h3>3.2 Wie werden die Daten erfasst?</h3>
+            <p>Die Daten werden erfasst, wenn Sie:</p>
+            <ul>
+                <li>Ein Benutzerkonto erstellen oder bearbeiten</li>
+                <li>Artikel, Kategorien oder Standorte anlegen oder ändern</li>
+                <li>Lagerbewegungen durchführen</li>
+                <li>Bilder hochladen</li>
+                <li>Die Anwendung nutzen (automatische Erfassung technischer Daten)</li>
+            </ul>
 
-        <h3>3.3 Wofür nutzen wir Ihre Daten?</h3>
-        <p>Die erhobenen Daten werden verwendet für:</p>
-        <ul>
-            <li>Bereitstellung der Lagerverwaltungsfunktionen</li>
-            <li>Benutzerverwaltung und Zugangskontrolle</li>
-            <li>Sicherstellung der IT-Sicherheit</li>
-            <li>Fehleranalyse und Systemoptimierung</li>
-            <li>Erfüllung gesetzlicher Aufbewahrungspflichten</li>
-        </ul>
-
-        <h2>4. Rechtsgrundlage der Verarbeitung</h2>
-        <p>Die Verarbeitung Ihrer personenbezogenen Daten erfolgt auf folgenden Rechtsgrundlagen:</p>
-        <ul>
-            <li><strong>Art. 6 Abs. 1 lit. b DSGVO</strong> (Vertragserfüllung) - für die Bereitstellung der Lagerverwaltungsfunktionen</li>
-            <li><strong>Art. 6 Abs. 1 lit. f DSGVO</strong> (berechtigtes Interesse) - für die IT-Sicherheit und den ordnungsgemäßen Betrieb</li>
-            <li><strong>Art. 6 Abs. 1 lit. a DSGVO</strong> (Einwilligung) - für optionale Funktionen wie Google Drive Synchronisation</li>
-        </ul>
-
-        <h2>5. Datenspeicherung und Sicherheit</h2>
-
-        <h3>5.1 Wo werden die Daten gespeichert?</h3>
-        <p>Alle Daten werden lokal in einer SQLite-Datenbank auf Ihrem Server gespeichert. Es erfolgt keine automatische Übertragung an externe Server, es sei denn, Sie aktivieren explizit optionale Cloud-Funktionen.</p>
-
-        <h3>5.2 Sicherheitsmaßnahmen</h3>
-        <p>Wir setzen folgende Sicherheitsmaßnahmen ein:</p>
-        <ul>
-            <li><strong>Passwort-Verschlüsselung:</strong> Alle Passwörter werden mit bcrypt gehasht</li>
-            <li><strong>CSRF-Schutz:</strong> Schutz vor Cross-Site-Request-Forgery-Angriffen</li>
-            <li><strong>Rate Limiting:</strong> Schutz vor Brute-Force-Angriffen</li>
-            <li><strong>Session-Management:</strong> Sichere Session-Verwaltung mit automatischer Token-Erneuerung</li>
-            <li><strong>HTTPS-Unterstützung:</strong> Verschlüsselte Datenübertragung (optional)</li>
-            <li><strong>Automatische Backups:</strong> Regelmäßige Datensicherungen</li>
-        </ul>
-
-        <h3>5.3 Speicherdauer</h3>
-        <ul>
-            <li><strong>Benutzerkontodaten:</strong> Bis zur Löschung des Kontos durch Admin</li>
-            <li><strong>Lagerverwaltungsdaten:</strong> Solange das Konto aktiv ist</li>
-            <li><strong>Server-Logs:</strong> Maximal 90 Tage</li>
-            <li><strong>Session-Daten:</strong> Bis zum Logout oder Ablauf der Session</li>
-        </ul>
-
-        <h2>6. Cookies und LocalStorage</h2>
-        <p>StockMaster verwendet folgende Mechanismen:</p>
-
-        <p><strong>Session-Cookies:</strong></p>
-        <ul>
-            <li>Notwendig für die Login-Funktionalität</li>
-            <li>Werden nach Logout oder Session-Ablauf gelöscht</li>
-            <li>Keine Tracking- oder Marketing-Cookies</li>
-        </ul>
-
-        <p><strong>LocalStorage:</strong></p>
-        <ul>
-            <li>Speichert Theme-Einstellungen (Hell-/Dunkelmodus)</li>
-            <li>Kann jederzeit in den Browser-Einstellungen gelöscht werden</li>
-        </ul>
-
-        <h2>7. Externe Dienste (optional)</h2>
-
-        <h3>7.1 Google Drive Synchronisation</h3>
-        <p>Falls Sie die optionale Google Drive Synchronisation aktivieren:</p>
-        <ul>
-            <li>Werden Backups Ihrer Datenbank in Ihrem persönlichen Google Drive gespeichert</li>
-            <li>Die Synchronisation erfolgt über die Google Drive API</li>
-            <li>Es gelten die Datenschutzbestimmungen von Google</li>
-            <li><strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. a DSGVO (Einwilligung)</li>
-            <li><strong>Widerruf:</strong> Jederzeit in den Einstellungen möglich</li>
-        </ul>
-
-        <h3>7.2 Chart.js (CDN)</h3>
-        <p>Für die Darstellung von Statistiken wird Chart.js von einem CDN geladen:</p>
-        <ul>
-            <li><strong>Anbieter:</strong> jsDelivr (CloudFlare)</li>
-            <li><strong>Datenschutzerklärung:</strong> https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net</li>
-        </ul>
-
-        <h2>8. Datenweitergabe</h2>
-        <p>Ihre personenbezogenen Daten werden grundsätzlich nicht an Dritte weitergegeben. Eine Weitergabe erfolgt nur, wenn:</p>
-        <ul>
-            <li>Sie ausdrücklich eingewilligt haben (Art. 6 Abs. 1 lit. a DSGVO)</li>
-            <li>Dies zur Erfüllung gesetzlicher Verpflichtungen erforderlich ist (Art. 6 Abs. 1 lit. c DSGVO)</li>
-            <li>Die Weitergabe zur Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen erforderlich ist</li>
-        </ul>
-
-        <h2>9. Ihre Rechte als betroffene Person</h2>
-        <p>Sie haben gemäß DSGVO folgende Rechte:</p>
-
-        <ul>
-            <li><strong>Recht auf Auskunft (Art. 15 DSGVO):</strong> Sie können Auskunft über Ihre gespeicherten Daten verlangen</li>
-            <li><strong>Recht auf Berichtigung (Art. 16 DSGVO):</strong> Sie können die Korrektur unrichtiger Daten verlangen</li>
-            <li><strong>Recht auf Löschung (Art. 17 DSGVO):</strong> Sie können die Löschung Ihrer Daten verlangen</li>
-            <li><strong>Recht auf Einschränkung (Art. 18 DSGVO):</strong> Sie können die Einschränkung der Verarbeitung verlangen</li>
-            <li><strong>Recht auf Datenübertragbarkeit (Art. 20 DSGVO):</strong> Sie können Ihre Daten in einem strukturierten Format erhalten</li>
-            <li><strong>Widerspruchsrecht (Art. 21 DSGVO):</strong> Sie können der Verarbeitung widersprechen</li>
-            <li><strong>Beschwerderecht (Art. 77 DSGVO):</strong> Sie können sich bei einer Aufsichtsbehörde beschweren</li>
-        </ul>
-
-        <h3>Ausübung Ihrer Rechte</h3>
-        <p>Zur Ausübung Ihrer Rechte wenden Sie sich bitte an:</p>
-        <div class="contact-info">
-            <p><strong>E-Mail:</strong> r.weschenfelder@proton.me</p>
+            <h3>3.3 Wofür nutzen wir Ihre Daten?</h3>
+            <p>Die erhobenen Daten werden verwendet für:</p>
+            <ul>
+                <li>Bereitstellung der Lagerverwaltungsfunktionen</li>
+                <li>Benutzerverwaltung und Zugangskontrolle</li>
+                <li>Sicherstellung der IT-Sicherheit</li>
+                <li>Fehleranalyse und Systemoptimierung</li>
+                <li>Erfüllung gesetzlicher Aufbewahrungspflichten</li>
+            </ul>
         </div>
 
-        <h2>10. Zuständige Aufsichtsbehörde</h2>
-        <p>Für Beschwerden nach Art. 77 DSGVO ist folgende Behörde zuständig:</p>
-        <div class="contact-info">
-            <p><strong>Thüringer Landesbeauftragter für den Datenschutz und die Informationsfreiheit</strong></p>
-            <p>Häßlerstraße 8</p>
-            <p>99096 Erfurt</p>
-            <p>Telefon: +49 361 57 3112900</p>
-            <p>E-Mail: poststelle@datenschutz.thueringen.de</p>
-            <p>Website: https://www.tlfdi.de</p>
+        <div class="card">
+            <h2><span class="num">4</span> Rechtsgrundlage der Verarbeitung</h2>
+            <p>Die Verarbeitung Ihrer personenbezogenen Daten erfolgt auf folgenden Rechtsgrundlagen:</p>
+            <ul>
+                <li><strong>Art. 6 Abs. 1 lit. b DSGVO</strong> (Vertragserfüllung) – für die Bereitstellung der Lagerverwaltungsfunktionen</li>
+                <li><strong>Art. 6 Abs. 1 lit. f DSGVO</strong> (berechtigtes Interesse) – für die IT-Sicherheit und den ordnungsgemäßen Betrieb</li>
+                <li><strong>Art. 6 Abs. 1 lit. a DSGVO</strong> (Einwilligung) – für optionale Funktionen</li>
+            </ul>
         </div>
 
-        <h2>11. Änderungen dieser Datenschutzerklärung</h2>
-        <p>Wir behalten uns vor, diese Datenschutzerklärung anzupassen, um sie an geänderte Rechtslagen oder bei Änderungen der Anwendung sowie der Datenverarbeitung anzupassen. Die jeweils aktuelle Version ist auf dieser Seite abrufbar.</p>
+        <div class="card">
+            <h2><span class="num">5</span> Datenspeicherung und Sicherheit</h2>
 
-        <h2>12. Kontakt</h2>
-        <p>Bei Fragen zum Datenschutz oder zur Ausübung Ihrer Rechte können Sie sich jederzeit an uns wenden:</p>
-        <div class="contact-info">
-            <p><strong>Robin Weschenfelder</strong></p>
-            <p>Straße der Einheit 9</p>
-            <p>07318 Saalfeld</p>
-            <p>Deutschland</p>
-            <p><strong>E-Mail:</strong> r.weschenfelder@proton.me</p>
+            <h3>5.1 Wo werden die Daten gespeichert?</h3>
+            <p>Alle Daten werden in einer Supabase-Datenbank (PostgreSQL) gespeichert. Supabase betreibt seine Infrastruktur auf AWS in der Region eu-central-1 (Frankfurt). Es erfolgt keine automatische Übertragung an weitere Dritte.</p>
+
+            <h3>5.2 Sicherheitsmaßnahmen</h3>
+            <p>Wir setzen folgende Sicherheitsmaßnahmen ein:</p>
+            <ul>
+                <li><strong>Passwort-Verwaltung:</strong> Alle Passwörter werden sicher über Supabase Auth verwaltet</li>
+                <li><strong>CSRF-Schutz:</strong> Schutz vor Cross-Site-Request-Forgery-Angriffen</li>
+                <li><strong>Rate Limiting:</strong> Schutz vor Brute-Force-Angriffen</li>
+                <li><strong>Session-Management:</strong> Sichere Session-Verwaltung mit automatischem Timeout</li>
+                <li><strong>HTTPS-Unterstützung:</strong> Verschlüsselte Datenübertragung</li>
+            </ul>
+
+            <h3>5.3 Speicherdauer</h3>
+            <ul>
+                <li><strong>Benutzerkontodaten:</strong> Bis zur Löschung des Kontos durch Admin</li>
+                <li><strong>Lagerverwaltungsdaten:</strong> Solange das Konto aktiv ist</li>
+                <li><strong>Server-Logs:</strong> Maximal 90 Tage</li>
+                <li><strong>Session-Daten:</strong> Bis zum Logout oder Ablauf der Session</li>
+            </ul>
         </div>
 
-        <p style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 13px; color: #6b7280;">
-            <strong>Letzte Aktualisierung:</strong> Januar 2025
-        </p>
+        <div class="card">
+            <h2><span class="num">6</span> Cookies und LocalStorage</h2>
 
-        <a href="/" class="back-link">← Zurück zur Anwendung</a>
+            <p><strong>Session-Cookies:</strong></p>
+            <ul>
+                <li>Notwendig für die Login-Funktionalität</li>
+                <li>Werden nach Logout oder Session-Ablauf gelöscht</li>
+                <li>Keine Tracking- oder Marketing-Cookies</li>
+            </ul>
+
+            <p><strong>LocalStorage:</strong></p>
+            <ul>
+                <li>Speichert Theme-Einstellungen (Hell-/Dunkelmodus)</li>
+                <li>Kann jederzeit in den Browser-Einstellungen gelöscht werden</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2><span class="num">7</span> Externe Dienste</h2>
+
+            <h3>7.1 Supabase</h3>
+            <p>StockMaster verwendet Supabase als Datenbank- und Authentifizierungsdienst:</p>
+            <ul>
+                <li><strong>Anbieter:</strong> Supabase Inc., San Francisco, CA, USA</li>
+                <li><strong>Zweck:</strong> Datenbankbetrieb und Benutzerverwaltung</li>
+                <li><strong>Datenschutzerklärung:</strong> https://supabase.com/privacy</li>
+            </ul>
+
+            <h3>7.2 Chart.js (CDN)</h3>
+            <p>Für die Darstellung von Statistiken wird Chart.js von einem CDN geladen:</p>
+            <ul>
+                <li><strong>Anbieter:</strong> jsDelivr (CloudFlare)</li>
+                <li><strong>Datenschutzerklärung:</strong> https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2><span class="num">8</span> Datenweitergabe</h2>
+            <p>Ihre personenbezogenen Daten werden grundsätzlich nicht an Dritte weitergegeben. Eine Weitergabe erfolgt nur, wenn:</p>
+            <ul>
+                <li>Sie ausdrücklich eingewilligt haben (Art. 6 Abs. 1 lit. a DSGVO)</li>
+                <li>Dies zur Erfüllung gesetzlicher Verpflichtungen erforderlich ist (Art. 6 Abs. 1 lit. c DSGVO)</li>
+                <li>Die Weitergabe zur Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen erforderlich ist</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2><span class="num">9</span> Ihre Rechte als betroffene Person</h2>
+            <p>Sie haben gemäß DSGVO folgende Rechte:</p>
+            <ul>
+                <li><strong>Recht auf Auskunft (Art. 15 DSGVO):</strong> Sie können Auskunft über Ihre gespeicherten Daten verlangen</li>
+                <li><strong>Recht auf Berichtigung (Art. 16 DSGVO):</strong> Sie können die Korrektur unrichtiger Daten verlangen</li>
+                <li><strong>Recht auf Löschung (Art. 17 DSGVO):</strong> Sie können die Löschung Ihrer Daten verlangen</li>
+                <li><strong>Recht auf Einschränkung (Art. 18 DSGVO):</strong> Sie können die Einschränkung der Verarbeitung verlangen</li>
+                <li><strong>Recht auf Datenübertragbarkeit (Art. 20 DSGVO):</strong> Sie können Ihre Daten in einem strukturierten Format erhalten</li>
+                <li><strong>Widerspruchsrecht (Art. 21 DSGVO):</strong> Sie können der Verarbeitung widersprechen</li>
+                <li><strong>Beschwerderecht (Art. 77 DSGVO):</strong> Sie können sich bei einer Aufsichtsbehörde beschweren</li>
+            </ul>
+
+            <h3>Ausübung Ihrer Rechte</h3>
+            <div class="contact-box">
+                <p><strong>E-Mail:</strong> r.weschenfelder@proton.me</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><span class="num">10</span> Zuständige Aufsichtsbehörde</h2>
+            <div class="contact-box">
+                <p><strong>Thüringer Landesbeauftragter für den Datenschutz und die Informationsfreiheit</strong></p>
+                <p>Häßlerstraße 8</p>
+                <p>99096 Erfurt</p>
+                <p>Telefon: +49 361 57 3112900</p>
+                <p>E-Mail: poststelle@datenschutz.thueringen.de</p>
+                <p>Website: https://www.tlfdi.de</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><span class="num">11</span> Änderungen dieser Datenschutzerklärung</h2>
+            <p>Wir behalten uns vor, diese Datenschutzerklärung anzupassen, um sie an geänderte Rechtslagen oder bei Änderungen der Anwendung sowie der Datenverarbeitung anzupassen. Die jeweils aktuelle Version ist auf dieser Seite abrufbar.</p>
+        </div>
+
+        <div class="card">
+            <h2><span class="num">12</span> Kontakt</h2>
+            <div class="contact-box">
+                <p><strong>Robin Weschenfelder</strong></p>
+                <p>Straße der Einheit 9</p>
+                <p>07318 Saalfeld</p>
+                <p>Deutschland</p>
+                <p><strong>E-Mail:</strong> r.weschenfelder@proton.me</p>
+            </div>
+
+            <p class="footer-note"><strong>Letzte Aktualisierung:</strong> Januar 2025</p>
+        </div>
     </div>
 </body>
 </html>

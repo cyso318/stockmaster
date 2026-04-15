@@ -359,7 +359,7 @@ def index():
                                organization_name=session.get('organization_name'),
                                is_admin=session.get('is_admin'),
                                is_org_owner=session.get('is_org_owner'))
-    return redirect(url_for('login'))
+    return render_template('landing.html')
 
 @app.route('/profile')
 @login_required
@@ -2165,8 +2165,8 @@ def check_system_status():
     class C:
         G = '\033[92m'; W = '\033[93m'; F = '\033[91m'; E = '\033[0m'; B = '\033[1m'; C2 = '\033[96m'
 
-    print(f"\n{C.C2}{C.B}    StockMaster — Supabase Edition{C.E}")
-    print(f"{C.B}    {'─' * 50}{C.E}\n")
+    print(f"\n{C.C2}{C.B}    StockMaster - Supabase Edition{C.E}")
+    print(f"{C.B}    {'-' * 50}{C.E}\n")
 
     checks = []
     try:

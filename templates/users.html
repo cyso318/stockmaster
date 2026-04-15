@@ -6,443 +6,366 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Benutzerverwaltung - StockMaster</title>
     <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
         :root {
-            --primary: #667eea;
-            --primary-dark: #5568d3;
-            --secondary: #764ba2;
+            --accent: #7c3aed;
+            --accent-blue: #1d4ed8;
+            --bg: #09090b;
+            --surface: rgba(30,41,59,0.7);
+            --border: rgba(255,255,255,0.08);
+            --text: #f4f4f5;
+            --muted: #a1a1aa;
+            --zinc-800: #27272a;
+            --zinc-700: #3f3f46;
             --success: #10b981;
             --danger: #ef4444;
-            --warning: #f59e0b;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-600: #4b5563;
-            --gray-900: #111113;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            background-attachment: fixed;
-            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
         }
 
-        .container {
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--zinc-700); border-radius: 3px; }
+
+        /* Orbs */
+        .orbs {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: drift 18s ease-in-out infinite alternate;
+        }
+        .orb-1 { width: 500px; height: 500px; background: rgba(124,58,237,0.1); top: -100px; left: -100px; animation-duration: 20s; }
+        .orb-2 { width: 400px; height: 400px; background: rgba(29,78,216,0.08); bottom: 0; right: -100px; animation-duration: 15s; animation-delay: -7s; }
+        @keyframes drift {
+            0%   { transform: translate(0,0) scale(1); }
+            100% { transform: translate(40px,50px) scale(1.05); }
+        }
+
+        /* Header */
+        header {
+            position: relative;
+            z-index: 10;
+            background: rgba(9,9,11,0.8);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+        }
+        .header-content {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
-        }
-
-        header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            padding: 0;
-            margin-bottom: 30px;
-            box-shadow: var(--shadow-lg);
-        }
-
-        .header-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px;
-            gap: 20px;
+            height: 64px;
+            gap: 16px;
         }
-
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        .logo-section { display: flex; align-items: center; gap: 12px; }
+        .logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(29,78,216,0.3));
+            border: 1px solid rgba(124,58,237,0.3);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
         }
-
-        .logo {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(10px);
-        }
-
         .brand h1 {
-            font-size: 28px;
+            font-size: 18px;
             font-weight: 700;
-            margin: 0;
             letter-spacing: -0.5px;
         }
-
-        .tagline {
-            font-size: 13px;
-            opacity: 0.9;
-            margin: 4px 0 0 0;
-            font-weight: 400;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 10px;
-        }
-
+        .tagline { font-size: 12px; color: var(--muted); }
         .btn-header {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 10px 16px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-weight: 500;
-            font-size: 14px;
-            cursor: pointer;
+            gap: 6px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 14px;
             border-radius: 8px;
             text-decoration: none;
-            transition: all 0.3s ease;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .btn-header:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+
+        /* Main */
+        main {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 2rem;
         }
 
-        .btn-header:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .content-section {
-            background: white;
-            padding: 30px;
+        /* Card */
+        .card {
+            background: var(--surface);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
             border-radius: 16px;
-            box-shadow: var(--shadow-md);
-            border: 1px solid var(--gray-200);
+            overflow: hidden;
         }
-
-        .section-header {
+        .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
+            padding: 24px 28px;
+            border-bottom: 1px solid var(--border);
         }
+        .card-header h2 { font-size: 20px; font-weight: 600; }
+        .card-body { padding: 28px; }
 
-        .section-header h2 {
-            font-size: 24px;
-            color: var(--gray-900);
-            font-weight: 600;
-        }
-
-        button, .btn {
-            padding: 10px 20px;
-            background: var(--primary);
-            color: white;
-            border: none;
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
             border-radius: 8px;
-            cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            transition: all 0.3s;
-            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
         }
-
-        button:hover, .btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed, #1d4ed8);
+            color: white;
+            box-shadow: 0 4px 16px rgba(124,58,237,0.3);
         }
-
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
         .btn-secondary {
-            background: var(--gray-600);
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            color: var(--text);
         }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+        .btn-danger { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #f87171; }
+        .btn-danger:hover { background: rgba(239,68,68,0.25); }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
 
-        .btn-secondary:hover {
-            background: #374151;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 20px;
-        }
-
+        /* Table */
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
         th {
-            background: var(--gray-50);
-            padding: 14px 12px;
+            padding: 12px 16px;
             text-align: left;
+            font-size: 11px;
             font-weight: 600;
-            border-bottom: 2px solid var(--gray-200);
-            color: var(--gray-900);
-            font-size: 13px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
         }
-
         td {
-            padding: 14px 12px;
-            border-bottom: 1px solid var(--gray-200);
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 14px;
         }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
 
-        tr:hover {
-            background: var(--gray-50);
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
+        /* Badges */
         .badge {
-            display: inline-block;
-            padding: 5px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
-            letter-spacing: 0.3px;
         }
+        .badge-success { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+        .badge-muted { background: rgba(161,161,170,0.1); color: var(--muted); border: 1px solid rgba(161,161,170,0.1); }
 
-        .badge-success {
-            background: #d1fae5;
-            color: #065f46;
+        /* Alert */
+        #alert-container { margin-bottom: 20px; }
+        .alert {
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            border: 1px solid;
+            animation: slideDown 0.3s;
         }
+        .alert-success { background: rgba(16,185,129,0.1); color: #34d399; border-color: rgba(16,185,129,0.2); }
+        .alert-error { background: rgba(239,68,68,0.1); color: #f87171; border-color: rgba(239,68,68,0.2); }
+        @keyframes slideDown { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .badge-danger {
-            background: #fee2e2;
-            color: #991b1b;
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
         }
+        .empty-state svg { width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.4; }
+        .empty-state p { font-size: 15px; }
 
+        /* Actions */
+        .actions { display: flex; gap: 6px; }
+
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
             z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            animation: fadeIn 0.3s;
-            backdrop-filter: blur(4px);
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            animation: fadeIn 0.2s;
         }
-
         .modal.active {
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
         }
-
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .modal-content {
-            background: white;
-            padding: 0;
+            background: #18181b;
+            border: 1px solid var(--border);
             border-radius: 16px;
-            max-width: 500px;
             width: 90%;
+            max-width: 480px;
             max-height: 90vh;
             overflow: hidden;
-            animation: slideIn 0.3s;
-            box-shadow: var(--shadow-lg);
+            animation: slideIn 0.2s;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.5);
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideIn {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 24px 30px;
-            border-bottom: 1px solid var(--gray-200);
-            background: var(--gray-50);
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
         }
-
-        .modal-header h3 {
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--gray-900);
-        }
-
+        .modal-header h3 { font-size: 17px; font-weight: 600; }
         .close {
-            font-size: 28px;
-            font-weight: bold;
+            font-size: 22px;
             cursor: pointer;
-            color: var(--gray-600);
-            transition: color 0.3s;
+            color: var(--muted);
+            line-height: 1;
+            transition: color 0.2s;
         }
-
-        .close:hover {
-            color: var(--gray-900);
-        }
-
-        .modal-content form {
-            padding: 30px;
+        .close:hover { color: var(--text); }
+        .modal-body {
+            padding: 24px;
             overflow-y: auto;
-            max-height: calc(90vh - 100px);
+            max-height: calc(90vh - 80px);
         }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--gray-900);
-            font-size: 14px;
-        }
-
+        /* Form */
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 12px;
-            border: 1px solid var(--gray-200);
+            padding: 11px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
             border-radius: 8px;
+            color: var(--text);
             font-size: 14px;
-            transition: all 0.3s;
-            background: white;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
         }
-
+        .form-group input::placeholder { color: var(--zinc-700); }
         .form-group input:focus,
         .form-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: rgba(124,58,237,0.5);
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
         }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: auto;
+        .form-group select option { background: #18181b; }
+        .form-hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
+        .checkbox-row { display: flex; align-items: center; gap: 10px; }
+        .checkbox-row input[type="checkbox"] {
+            width: 16px; height: 16px;
+            accent-color: var(--accent);
             cursor: pointer;
         }
-
-        .alert {
-            padding: 12px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            animation: slideDown 0.3s;
-            border: 1px solid;
-        }
-
-        .alert-success {
-            background: #d1fae5;
-            color: #065f46;
-            border-color: #10b981;
-        }
-
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border-color: #ef4444;
-        }
-
-        @keyframes slideDown {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--gray-600);
-        }
-
-        .actions {
+        .checkbox-row label { margin: 0; font-size: 14px; color: var(--text); cursor: pointer; }
+        .modal-footer {
             display: flex;
-            gap: 8px;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
         }
 
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .header-actions {
-                width: 100%;
-                flex-wrap: wrap;
-            }
-
-            .btn-header {
-                flex: 1;
-                min-width: 120px;
-                justify-content: center;
-            }
+        @media (max-width: 640px) {
+            .header-content { height: auto; padding: 12px 0; flex-wrap: wrap; }
+            main { padding: 20px 1rem; }
+            .card-body { padding: 16px; }
         }
     </style>
 </head>
 <body>
+    <div class="orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
     <header>
-        <div class="container">
-            <div class="header-content">
-                <div class="logo-section">
-                    <div class="logo">
-                        <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M20 21v-2a4 4 0 0 1 8 0v2M15 21h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H15a2 2 0 0 1-2-2V23a2 2 0 0 1 2-2z" stroke="white" stroke-width="2" fill="none"/>
-                            <circle cx="24" cy="27" r="2" fill="white"/>
-                        </svg>
-                    </div>
-                    <div class="brand">
-                        <h1>Benutzerverwaltung</h1>
-                        <p class="tagline">StockMaster Admin-Bereich</p>
-                    </div>
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
                 </div>
-                <div class="header-actions">
-                    <a href="/" class="btn-header">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                            <polyline points="9 22 9 12 15 12 15 22"/>
-                        </svg>
-                        Zurück
-                    </a>
+                <div class="brand">
+                    <h1>Benutzerverwaltung</h1>
+                    <p class="tagline">StockMaster Admin-Bereich</p>
                 </div>
             </div>
+            <a href="/" class="btn-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                Zurück
+            </a>
         </div>
     </header>
 
-    <div class="container">
-        <div class="content-section">
-            <div class="section-header">
+    <main>
+        <div id="alert-container"></div>
+
+        <div class="card">
+            <div class="card-header">
                 <h2>Benutzer</h2>
-                <button onclick="openUserModal()">+ Neuer Benutzer</button>
+                <button class="btn btn-primary" onclick="openUserModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Neuer Benutzer
+                </button>
             </div>
-
-            <!-- Alert Container -->
-            <div id="alert-container"></div>
-
-            <!-- Users List -->
-            <div id="users-list"></div>
+            <div class="card-body">
+                <div class="table-wrapper">
+                    <div id="users-list"></div>
+                </div>
+            </div>
         </div>
-    </div>
+    </main>
 
     <!-- User Modal -->
     <div id="user-modal" class="modal">
@@ -451,56 +374,52 @@
                 <h3 id="modal-title">Neuer Benutzer</h3>
                 <span class="close" onclick="closeModal()">&times;</span>
             </div>
-            <form id="user-form" onsubmit="saveUser(event)">
-                <input type="hidden" id="user-id">
+            <div class="modal-body">
+                <form id="user-form" onsubmit="saveUser(event)">
+                    <input type="hidden" id="user-id">
 
-                <div class="form-group">
-                    <label>Benutzername *</label>
-                    <input type="text" id="user-username" required minlength="3">
-                </div>
-
-                <div class="form-group">
-                    <label>E-Mail *</label>
-                    <input type="email" id="user-email" required>
-                </div>
-
-                <div class="form-group" id="password-group">
-                    <label id="password-label">Passwort *</label>
-                    <input type="password" id="user-password" minlength="8">
-                    <small style="color: var(--gray-600); font-size: 12px;" id="password-hint">Min. 8 Zeichen, Groß-/Kleinbuchstaben + Zahl</small>
-                </div>
-
-                <div class="form-group">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="user-is-admin">
-                        <label for="user-is-admin" style="margin: 0;">Administrator-Rechte</label>
+                    <div class="form-group">
+                        <label>Benutzername *</label>
+                        <input type="text" id="user-username" required minlength="3" placeholder="benutzername">
                     </div>
-                    <small style="color: var(--gray-600); font-size: 12px;">Administratoren können Benutzer verwalten und alle Funktionen nutzen.</small>
-                </div>
 
-                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px;">
-                    <button type="button" onclick="closeModal()" class="btn btn-secondary">Abbrechen</button>
-                    <button type="submit" class="btn" id="submit-btn">Benutzer erstellen</button>
-                </div>
-            </form>
+                    <div class="form-group">
+                        <label>E-Mail *</label>
+                        <input type="email" id="user-email" required placeholder="name@beispiel.de">
+                    </div>
+
+                    <div class="form-group" id="password-group">
+                        <label id="password-label">Passwort *</label>
+                        <input type="password" id="user-password" minlength="8" placeholder="Min. 8 Zeichen">
+                        <p class="form-hint" id="password-hint">Min. 8 Zeichen, Groß-/Kleinbuchstaben + Zahl</p>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="checkbox-row">
+                            <input type="checkbox" id="user-is-admin">
+                            <label for="user-is-admin">Administrator-Rechte</label>
+                        </div>
+                        <p class="form-hint" style="margin-top: 6px;">Administratoren können Benutzer verwalten und alle Funktionen nutzen.</p>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" onclick="closeModal()" class="btn btn-secondary">Abbrechen</button>
+                        <button type="submit" class="btn btn-primary" id="submit-btn">Benutzer erstellen</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
     <script>
-        // Load users on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadUsers();
         });
 
-        // Load all users
         async function loadUsers() {
             try {
                 const response = await fetch('/api/users');
-
-                if (!response.ok) {
-                    throw new Error('Fehler beim Laden der Benutzer');
-                }
-
+                if (!response.ok) throw new Error('Fehler beim Laden der Benutzer');
                 const users = await response.json();
                 displayUsers(users);
             } catch (error) {
@@ -508,18 +427,16 @@
             }
         }
 
-        // Display users table
         function displayUsers(users) {
             const container = document.getElementById('users-list');
 
             if (users.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                             <circle cx="9" cy="7" r="4"/>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
                         </svg>
                         <p>Keine Benutzer vorhanden</p>
                     </div>
@@ -549,37 +466,28 @@
                 html += `
                     <tr>
                         <td><strong>${user.username}</strong></td>
-                        <td>${user.email || '-'}</td>
+                        <td style="color: var(--muted)">${user.email || '-'}</td>
                         <td>
-                            ${user.is_admin ?
-                                '<span class="badge badge-success">Ja</span>' :
-                                '<span class="badge badge-danger">Nein</span>'}
+                            ${user.is_admin
+                                ? '<span class="badge badge-success">Admin</span>'
+                                : '<span class="badge badge-muted">Benutzer</span>'}
                         </td>
-                        <td>${createdAt}</td>
-                        <td>${lastLogin}</td>
+                        <td style="color: var(--muted)">${createdAt}</td>
+                        <td style="color: var(--muted)">${lastLogin}</td>
                         <td>
                             <div class="actions">
-                                <button onclick="editUser(${user.id})" class="btn btn-secondary btn-sm">
-                                    Bearbeiten
-                                </button>
-                                <button onclick="deleteUser(${user.id}, '${user.username}')" class="btn btn-danger btn-sm">
-                                    Löschen
-                                </button>
+                                <button onclick="editUser(${user.id})" class="btn btn-secondary btn-sm">Bearbeiten</button>
+                                <button onclick="deleteUser(${user.id}, '${user.username}')" class="btn btn-danger btn-sm">Löschen</button>
                             </div>
                         </td>
                     </tr>
                 `;
             });
 
-            html += `
-                    </tbody>
-                </table>
-            `;
-
+            html += `</tbody></table>`;
             container.innerHTML = html;
         }
 
-        // Open user modal for creating new user
         function openUserModal() {
             document.getElementById('modal-title').textContent = 'Neuer Benutzer';
             document.getElementById('submit-btn').textContent = 'Benutzer erstellen';
@@ -591,7 +499,6 @@
             document.getElementById('user-id').value = '';
         }
 
-        // Edit existing user
         async function editUser(userId) {
             try {
                 const response = await fetch(`/api/users/${userId}`);
@@ -617,12 +524,10 @@
             }
         }
 
-        // Close modal
         function closeModal() {
             document.getElementById('user-modal').classList.remove('active');
         }
 
-        // Save user (create or update)
         async function saveUser(event) {
             event.preventDefault();
 
@@ -632,7 +537,6 @@
             const email = document.getElementById('user-email').value;
             const isAdmin = document.getElementById('user-is-admin').checked;
 
-            // Validation
             if (!email) {
                 showAlert('E-Mail ist erforderlich', 'error');
                 return;
@@ -647,23 +551,12 @@
                 const url = userId ? `/api/users/${userId}` : '/api/users';
                 const method = userId ? 'PUT' : 'POST';
 
-                const body = {
-                    username: username,
-                    email: email || null,
-                    is_admin: isAdmin
-                };
-
-                // Only include password if it's set
-                if (password) {
-                    body.password = password;
-                }
+                const body = { username, email: email || null, is_admin: isAdmin };
+                if (password) body.password = password;
 
                 const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
+                    method,
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify(body)
                 });
 
@@ -681,19 +574,14 @@
             }
         }
 
-        // Delete user
         async function deleteUser(userId, username) {
-            if (!confirm(`Möchten Sie den Benutzer "${username}" wirklich löschen?`)) {
-                return;
-            }
+            if (!confirm(`Möchten Sie den Benutzer "${username}" wirklich löschen?`)) return;
 
             try {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
                 const response = await fetch(`/api/users/${userId}`, {
                     method: 'DELETE',
-                    headers: {
-                        'X-CSRFToken': csrfToken
-                    }
+                    headers: { 'X-CSRFToken': csrfToken }
                 });
 
                 const result = await response.json();
@@ -709,25 +597,18 @@
             }
         }
 
-        // Show alert message
         function showAlert(message, type = 'success') {
             const container = document.getElementById('alert-container');
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;
             alert.textContent = message;
             container.appendChild(alert);
-
-            setTimeout(() => {
-                alert.remove();
-            }, 5000);
+            setTimeout(() => alert.remove(), 5000);
         }
 
-        // Close modal on outside click
         window.onclick = function(event) {
             const modal = document.getElementById('user-modal');
-            if (event.target === modal) {
-                closeModal();
-            }
+            if (event.target === modal) closeModal();
         }
     </script>
 </body>

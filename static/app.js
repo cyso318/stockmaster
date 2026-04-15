@@ -958,6 +958,8 @@ function openItemModal(id = null) {
         document.getElementById('item-id').value = item.id;
         document.getElementById('item-sku').value = item.sku || '';
         document.getElementById('item-name').value = item.name;
+        const barcodeEl = document.getElementById('item-barcode');
+        if (barcodeEl) barcodeEl.value = item.barcode || '';
         document.getElementById('item-description').value = item.description || '';
         document.getElementById('item-category').value = item.category_id || '';
         document.getElementById('item-location').value = item.location_id || '';
@@ -983,7 +985,7 @@ function openItemModal(id = null) {
         }
 
         // Vorschau zurücksetzen
-        document.getElementById('image-preview-container').style.display = 'none';
+        document.getElementById('image-preview').style.display = 'none';
         document.getElementById('item-image-upload').value = '';
 
         // Gruppen-Felder setzen
@@ -1010,10 +1012,10 @@ function openItemModal(id = null) {
         if (groupEl) groupEl.value = '';
         toggleGroupFields();
 
-        // Bild-Sektion verstecken für neue Artikel
-        document.getElementById('image-section').style.display = 'none';
+        // Bild-Sektion anzeigen (auch für neue Artikel)
+        document.getElementById('image-section').style.display = 'block';
         document.getElementById('current-image-container').style.display = 'none';
-        document.getElementById('image-preview-container').style.display = 'none';
+        document.getElementById('image-preview').style.display = 'none';
 
         // Wartungspläne zurücksetzen
         if (typeof loadItemSchedules === 'function') {
@@ -1610,11 +1612,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const preview = document.getElementById('image-preview');
-                    const previewContainer = document.getElementById('image-preview-container');
-
-                    preview.src = e.target.result;
-                    previewContainer.style.display = 'block';
+                    const previewDiv = document.getElementById('image-preview');
+                    const previewImg = document.getElementById('preview-img');
+                    if (previewImg) previewImg.src = e.target.result;
+                    if (previewDiv) previewDiv.style.display = 'block';
                 };
                 reader.readAsDataURL(file);
             }
@@ -1676,7 +1677,7 @@ async function deleteItemImage() {
             // UI aktualisieren
             document.getElementById('current-image-container').style.display = 'none';
             document.getElementById('item-image-upload').value = '';
-            document.getElementById('image-preview-container').style.display = 'none';
+            document.getElementById('image-preview').style.display = 'none';
 
             // Items neu laden
             await loadItems();
